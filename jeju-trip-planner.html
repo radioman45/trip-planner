@@ -353,6 +353,219 @@
       color: var(--on-strong);
     }
 
+    /* ── 결과 줄 + 장소 추가 버튼 ────────────────────────────────────── */
+    .result-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
+    .result-row .result-count { margin-bottom: 0; }
+    .btn-add {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 44px;
+      padding: 9px 16px;
+      border: var(--bw) solid var(--ink);
+      border-radius: var(--radius-sm);
+      background: var(--fill-strong);
+      color: var(--on-strong);
+      box-shadow: var(--sh-sm);
+      font: inherit;
+      font-size: 0.88rem;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform var(--motion) ease, box-shadow var(--motion) ease,
+                  background var(--motion) ease, color var(--motion) ease;
+    }
+    .btn-add:hover { background: var(--surface); color: var(--ink); }
+    .btn-add:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--shadow); }
+
+    /* 직접 추가한 장소는 출처를 밝혀 둡니다. */
+    .tag-custom {
+      background: transparent;
+      color: var(--ink-soft);
+      border: 2px dashed var(--ink-soft);
+      padding: 1px 8px;
+    }
+
+    /* ── 장소 추가 시트 ────────────────────────────────────────────── */
+    .sheet-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      background: rgba(17, 17, 17, 0.55);
+    }
+    .sheet-backdrop[hidden] { display: none; }
+
+    .sheet {
+      width: 100%;
+      max-width: 560px;
+      max-height: 92vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--paper);
+      border: var(--bw) solid var(--ink);
+      border-radius: var(--radius) var(--radius) 0 0;
+      box-shadow: var(--sh-lg, 8px 8px 0 var(--shadow));
+    }
+    @media (min-width: 640px) {
+      .sheet-backdrop { align-items: center; }
+      .sheet { border-radius: var(--radius); }
+    }
+
+    .sheet-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 15px 16px;
+      border-bottom: var(--bw) solid var(--ink);
+      background: var(--surface-alt);
+    }
+    .sheet-head h2 { font-size: 1.1rem; font-weight: 900; letter-spacing: -0.03em; }
+    .sheet-body { padding: 16px; overflow-y: auto; }
+    .sheet-foot {
+      display: flex;
+      gap: 10px;
+      padding: 14px 16px;
+      border-top: var(--bw) solid var(--ink);
+      background: var(--surface-alt);
+    }
+    .sheet-foot button { flex: 1; }
+
+    /* 카카오 검색 영역 */
+    .kakao-box { margin-bottom: 18px; }
+    .kakao-box[hidden] { display: none; }
+    .kakao-row { display: flex; gap: 9px; margin-bottom: 10px; }
+    .kakao-row .search-wrap { flex: 1 1 auto; }
+    .kakao-status {
+      margin-bottom: 10px;
+      padding: 11px 13px;
+      border: 2px dashed var(--ink-soft);
+      border-radius: var(--radius-sm);
+      color: var(--ink-soft);
+      font-size: 0.84rem;
+      font-weight: 700;
+      line-height: 1.5;
+    }
+    .kakao-status[hidden] { display: none; }
+
+    .kakao-results { list-style: none; display: grid; gap: 8px; max-height: 240px; overflow-y: auto; }
+    .kakao-results:empty { display: none; }
+    .kakao-results button {
+      width: 100%;
+      display: block;
+      text-align: left;
+      padding: 11px 13px;
+      border: var(--bw) solid var(--ink);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--ink);
+      box-shadow: var(--sh-sm);
+      font: inherit;
+      cursor: pointer;
+      transition: transform var(--motion) ease, box-shadow var(--motion) ease,
+                  background var(--motion) ease, color var(--motion) ease;
+    }
+    .kakao-results button:hover { background: var(--ink); color: var(--paper); }
+    .kakao-results button:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--shadow); }
+    .kr-name { display: block; font-weight: 900; font-size: 0.95rem; }
+    .kr-meta { display: block; font-size: 0.79rem; opacity: 0.75; margin-top: 3px; line-height: 1.4; }
+
+    /* 폼 */
+    .field { margin-bottom: 13px; }
+    .field label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.75rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-soft);
+    }
+    .field .req { color: var(--ink); }
+    .field input,
+    .field textarea,
+    .field select {
+      width: 100%;
+      padding: 11px 13px;
+      border: var(--bw) solid var(--ink);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--ink);
+      font: inherit;
+      font-size: 0.92rem;
+      font-weight: 500;
+    }
+    .field input:focus,
+    .field textarea:focus,
+    .field select:focus {
+      outline: none;
+      box-shadow: var(--sh-sm);
+    }
+    .field textarea { resize: vertical; min-height: 62px; }
+    .field-row { display: flex; gap: 10px; }
+    .field-row .field { flex: 1; min-width: 0; }
+    .field-hint {
+      margin-top: 5px;
+      font-size: 0.76rem;
+      font-weight: 500;
+      color: var(--ink-soft);
+    }
+    .form-error {
+      margin-bottom: 13px;
+      padding: 11px 13px;
+      border: var(--bw) solid var(--ink);
+      border-radius: var(--radius-sm);
+      background: var(--fill-strong);
+      color: var(--on-strong);
+      font-size: 0.85rem;
+      font-weight: 900;
+    }
+    .form-error[hidden] { display: none; }
+
+    .btn-ghost {
+      min-height: 46px;
+      padding: 10px 16px;
+      border: var(--bw) solid var(--ink);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--ink);
+      box-shadow: var(--sh-sm);
+      font: inherit;
+      font-size: 0.9rem;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform var(--motion) ease, box-shadow var(--motion) ease,
+                  background var(--motion) ease, color var(--motion) ease;
+    }
+    .btn-ghost:hover { background: var(--ink); color: var(--paper); }
+    .btn-ghost:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--shadow); }
+    .btn-primary {
+      min-height: 46px;
+      padding: 10px 16px;
+      border: var(--bw) solid var(--ink);
+      border-radius: var(--radius-sm);
+      background: var(--fill-strong);
+      color: var(--on-strong);
+      box-shadow: var(--sh-sm);
+      font: inherit;
+      font-size: 0.9rem;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform var(--motion) ease, box-shadow var(--motion) ease,
+                  background var(--motion) ease, color var(--motion) ease;
+    }
+    .btn-primary:hover { background: var(--surface); color: var(--ink); }
+    .btn-primary:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--shadow); }
+
     /* ── 삭제 복원 바 ─────────────────────────────────────────────────── */
     .restore-bar {
       display: flex;
@@ -904,7 +1117,13 @@
           <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.6v.01"/></svg>
           <span><strong>영업시간과 가격대는 변동될 수 있습니다.</strong> 방문 전 카카오맵 링크에서 최신 정보를 꼭 확인하세요.</span>
         </p>
-        <p class="result-count" id="result-count" aria-live="polite"></p>
+        <div class="result-row">
+          <p class="result-count" id="result-count" aria-live="polite"></p>
+          <button class="btn-add" type="button" id="open-add">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            장소 추가
+          </button>
+        </div>
         <div class="restore-bar" id="restore-bar" hidden>
           <span><b id="hidden-count">0</b>곳을 목록에서 삭제했습니다.</span>
           <button class="btn-restore" type="button" id="restore-all">
@@ -941,6 +1160,96 @@
       <p>장소 정보는 참고용입니다. 영업시간·가격·휴무일은 방문 전 확인해 주세요.</p>
     </div>
   </footer>
+
+  <!-- 장소 추가 시트 -->
+  <div class="sheet-backdrop" id="add-backdrop" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="add-title">
+      <div class="sheet-head">
+        <h2 id="add-title">장소 추가</h2>
+        <button class="icon-btn" type="button" id="close-add" aria-label="닫기">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+
+      <div class="sheet-body">
+        <!-- 카카오맵 검색: JS 키가 설정된 때만 노출 -->
+        <div class="kakao-box" id="kakao-box" hidden>
+          <div class="kakao-row">
+            <div class="search-wrap">
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg>
+              <input id="kakao-query" type="search" autocomplete="off"
+                     placeholder="카카오맵에서 검색" aria-label="카카오맵 장소 검색" />
+            </div>
+            <button class="btn-ghost" type="button" id="kakao-search-btn">찾기</button>
+          </div>
+          <p class="kakao-status" id="kakao-status" hidden></p>
+          <ul class="kakao-results" id="kakao-results"></ul>
+        </div>
+
+        <p class="form-error" id="form-error" hidden></p>
+
+        <form id="add-form" novalidate>
+          <div class="field">
+            <label for="f-name">이름 <span class="req">*</span></label>
+            <input id="f-name" name="name" type="text" maxlength="40" required />
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="f-category">카테고리 <span class="req">*</span></label>
+              <select id="f-category" name="category">
+                <option value="맛집">맛집</option>
+                <option value="카페">카페</option>
+                <option value="명소">명소</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="f-region">권역 <span class="req">*</span></label>
+              <select id="f-region" name="region"></select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="f-address">주소 <span class="req">*</span></label>
+            <input id="f-address" name="address" type="text" maxlength="120" required />
+          </div>
+
+          <div class="field">
+            <label for="f-summary">한 줄 설명</label>
+            <textarea id="f-summary" name="summary" maxlength="120"></textarea>
+          </div>
+
+          <div class="field">
+            <label for="f-highlight">추천 메뉴 · 볼거리</label>
+            <input id="f-highlight" name="highlight" type="text" maxlength="80" />
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="f-hours">영업시간</label>
+              <input id="f-hours" name="hours" type="text" maxlength="60" placeholder="09:00~18:00" />
+            </div>
+            <div class="field">
+              <label for="f-price">가격대</label>
+              <input id="f-price" name="price" type="text" maxlength="40" placeholder="1만원대" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="f-tip">방문 팁</label>
+            <textarea id="f-tip" name="tip" maxlength="160"></textarea>
+          </div>
+          <p class="field-hint">이름·카테고리·권역·주소만 필수입니다. 비워둔 항목은 카드에 표시되지 않습니다.</p>
+        </form>
+      </div>
+
+      <div class="sheet-foot">
+        <button class="btn-ghost" type="button" id="cancel-add">취소</button>
+        <button class="btn-primary" type="button" id="save-add">추가하기</button>
+      </div>
+    </div>
+  </div>
+
 
   <script>
     // ── 권역 정의 (표시 순서 = 동선 순서) ────────────────────────────────
@@ -1395,15 +1704,27 @@
     const STORAGE_KEY = "jeju-planner-saved";
     const HIDDEN_KEY = "jeju-planner-hidden";
     const VIEW_KEY = "jeju-planner-view";
+    const CUSTOM_KEY = "jeju-planner-custom";
+
+    // 카카오 JavaScript 키.
+    // 비워 두면 카카오 검색이 숨겨지고 직접 입력만 동작합니다.
+    // 발급: developers.kakao.com → 앱 생성 → JavaScript 키
+    // 반드시 [앱 설정 > 플랫폼 > Web]에 배포 도메인을 등록해야 동작합니다.
+    const KAKAO_JS_KEY = "";
 
     const state = {
       category: "all",
       region: "all",
       query: "",
       view: loadView(),
-      hidden: loadIds(HIDDEN_KEY),
-      saved: loadIds(STORAGE_KEY),
+      custom: [],
+      hidden: [],
+      saved: [],
     };
+    // 직접 추가한 장소를 먼저 올려야 담김·삭제 id 검증이 그것까지 포함합니다.
+    state.custom = loadCustom();
+    state.hidden = loadIds(HIDDEN_KEY);
+    state.saved = loadIds(STORAGE_KEY);
     // 삭제된 장소가 담긴 목록에 남아 있지 않도록 시작 시 맞춥니다.
     state.saved = state.saved.filter(function (id) { return state.hidden.indexOf(id) === -1; });
 
@@ -1414,11 +1735,39 @@
         if (!raw) return [];
         const parsed = JSON.parse(raw);
         if (!Array.isArray(parsed)) return [];
-        const valid = new Set(PLACES.map(function (p) { return p.id; }));
+        const valid = new Set(allPlaces().map(function (p) { return p.id; }));
         return parsed.filter(function (id) { return valid.has(id); });
       } catch (e) {
         return [];
       }
+    }
+
+    // 직접 추가한 장소를 읽습니다. 필수 필드가 없는 항목은 버립니다.
+    function loadCustom() {
+      try {
+        const raw = localStorage.getItem(CUSTOM_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return [];
+        const regionIds = new Set(REGIONS.map(function (r) { return r.id; }));
+        return parsed.filter(function (p) {
+          return p && typeof p.id === "string" && p.name && p.address &&
+            CATEGORIES.indexOf(p.category) !== -1 && regionIds.has(p.region);
+        }).map(function (p) {
+          return {
+            id: p.id, name: p.name, category: p.category, region: p.region,
+            address: p.address, summary: p.summary || "", highlight: p.highlight || "",
+            hours: p.hours || "", price: p.price || "", tip: p.tip || "", custom: true,
+          };
+        });
+      } catch (e) {
+        return [];
+      }
+    }
+
+    // 기본 장소 + 직접 추가한 장소
+    function allPlaces() {
+      return PLACES.concat(state && state.custom ? state.custom : []);
     }
 
     function loadView() {
@@ -1440,6 +1789,7 @@
 
     function persistSaved() { persist(STORAGE_KEY, state.saved); }
     function persistHidden() { persist(HIDDEN_KEY, state.hidden); }
+    function persistCustom() { persist(CUSTOM_KEY, state.custom); }
 
     function isSaved(id) {
       return state.saved.indexOf(id) !== -1;
@@ -1495,7 +1845,9 @@
         .replace(/"/g, "&quot;");
     }
 
+    // 빈 값은 줄 자체를 만들지 않습니다 (직접 추가 장소의 선택 항목 대응).
     function metaRow(label, value) {
+      if (!value) return "";
       return "<div><dt>" + escapeHtml(label) + "</dt><dd>" + escapeHtml(value) + "</dd></div>";
     }
 
@@ -1530,6 +1882,12 @@
       article.className = "place";
       article.dataset.category = place.category;
       const saved = isSaved(place.id);
+      const meta =
+        metaRow("주소", place.address) +
+        metaRow(place.category === "명소" ? "볼거리" : "추천", place.highlight) +
+        metaRow("영업시간", place.hours) +
+        metaRow("가격대", place.price) +
+        metaRow("방문 팁", place.tip);
       article.innerHTML =
         '<span class="place-tab" aria-hidden="true"></span>' +
         '<div class="place-head">' +
@@ -1539,18 +1897,13 @@
         '<div class="place-tags">' +
         '<span class="tag tag-category">' + escapeHtml(place.category) + "</span>" +
         '<span class="tag">' + escapeHtml(regionName(place.region)) + "</span>" +
+        (place.custom ? '<span class="tag tag-custom">직접 추가</span>' : "") +
         "</div>" +
         '<p class="place-addr">' + escapeHtml(place.address) + "</p>" +
         "</div>" +
         "</div>" +
-        '<p class="place-summary">' + escapeHtml(place.summary) + "</p>" +
-        '<dl class="place-meta">' +
-        metaRow("주소", place.address) +
-        metaRow(place.category === "명소" ? "볼거리" : "추천", place.highlight) +
-        metaRow("영업시간", place.hours) +
-        metaRow("가격대", place.price) +
-        metaRow("방문 팁", place.tip) +
-        "</dl>" +
+        (place.summary ? '<p class="place-summary">' + escapeHtml(place.summary) + "</p>" : "") +
+        (meta ? '<dl class="place-meta">' + meta + "</dl>" : "") +
         '<div class="place-actions">' +
         '<button class="btn-save" type="button" aria-pressed="' + saved + '">' +
         icon(saved ? ICON_PATHS.check : ICON_PATHS.plus) +
@@ -1574,7 +1927,7 @@
     function renderPlaces() {
       const grid = document.getElementById("place-grid");
       const q = state.query.trim().toLowerCase();
-      const filtered = PLACES.filter(function (place) {
+      const filtered = allPlaces().filter(function (place) {
         return (
           state.hidden.indexOf(place.id) === -1 &&
           (state.category === "all" || place.category === state.category) &&
@@ -1632,7 +1985,7 @@
       REGIONS.forEach(function (region) {
         const places = state.saved
           .map(function (id) {
-            return PLACES.find(function (p) { return p.id === id; });
+            return allPlaces().find(function (p) { return p.id === id; });
           })
           .filter(function (place) {
             return place && place.region === region.id;
@@ -1695,6 +2048,213 @@
       REGIONS.map(function (r) { return { value: r.id, label: r.name }; }),
       "region"
     );
+
+    // ── 장소 추가 ──────────────────────────────────────────────────────
+    const backdrop = document.getElementById("add-backdrop");
+    const kakaoBox = document.getElementById("kakao-box");
+    const kakaoStatus = document.getElementById("kakao-status");
+    const kakaoResults = document.getElementById("kakao-results");
+    const formError = document.getElementById("form-error");
+    const F = {
+      name: document.getElementById("f-name"),
+      category: document.getElementById("f-category"),
+      region: document.getElementById("f-region"),
+      address: document.getElementById("f-address"),
+      summary: document.getElementById("f-summary"),
+      highlight: document.getElementById("f-highlight"),
+      hours: document.getElementById("f-hours"),
+      price: document.getElementById("f-price"),
+      tip: document.getElementById("f-tip"),
+    };
+
+    // 권역 셀렉트 채우기
+    REGIONS.forEach(function (r) {
+      const o = document.createElement("option");
+      o.value = r.id;
+      o.textContent = r.name;
+      F.region.appendChild(o);
+    });
+
+    // 주소 문자열로 권역을 추정합니다.
+    function inferRegion(address) {
+      const a = String(address || "");
+      if (/애월|한림|협재|곽지/.test(a)) return "west";
+      if (/조천|구좌|함덕|월정|김녕|세화/.test(a)) return "east";
+      if (/성산|표선|우도|남원/.test(a)) return "seongsan";
+      if (/서귀포|중문|안덕|대정|색달/.test(a)) return "seogwipo";
+      return "jeju-city";
+    }
+
+    // 카카오 카테고리 코드를 이 페이지의 3분류로 율깁니다.
+    function inferCategory(groupCode, categoryName) {
+      if (groupCode === "CE7") return "카페";
+      if (groupCode === "FD6") return "맛집";
+      if (groupCode === "AT4" || groupCode === "CT1" || groupCode === "PK6") return "명소";
+      const n = String(categoryName || "");
+      if (/카페|베이커리|디저트/.test(n)) return "카페";
+      if (/음식점|식당|한식|일식|중식|양식/.test(n)) return "맛집";
+      if (/관광|명소|공원|해수욕장|박물관|문화/.test(n)) return "명소";
+      return "맛집";
+    }
+
+    // 카카오 SDK는 처음 필요할 때 한 번만 불러옵니다.
+    let kakaoLoading = null;
+    function loadKakao() {
+      if (window.kakao && window.kakao.maps && window.kakao.maps.services) return Promise.resolve(true);
+      if (kakaoLoading) return kakaoLoading;
+      kakaoLoading = new Promise(function (resolve) {
+        const s = document.createElement("script");
+        s.src = "https://dapi.kakao.com/v2/maps/sdk.js?appkey=" +
+          encodeURIComponent(KAKAO_JS_KEY) + "&libraries=services&autoload=false";
+        s.onload = function () {
+          try {
+            kakao.maps.load(function () { resolve(!!(kakao.maps && kakao.maps.services)); });
+          } catch (e) { resolve(false); }
+        };
+        // 도메인 미등록·키 오류·오프라인이면 여기로 떨어집니다.
+        s.onerror = function () { resolve(false); };
+        document.head.appendChild(s);
+        setTimeout(function () { resolve(false); }, 10000);
+      });
+      return kakaoLoading;
+    }
+
+    function setKakaoStatus(msg) {
+      kakaoStatus.textContent = msg || "";
+      kakaoStatus.hidden = !msg;
+    }
+
+    function runKakaoSearch() {
+      const q = document.getElementById("kakao-query").value.trim();
+      kakaoResults.innerHTML = "";
+      if (!q) { setKakaoStatus("검색어를 입력하세요."); return; }
+      setKakaoStatus("카카오맵에서 찾는 중…");
+
+      loadKakao().then(function (ok) {
+        if (!ok) {
+          setKakaoStatus("카카오맵 검색을 불러오지 못했습니다. 키가 올바른지, 배포 도메인이 카카오 개발자 콘솔에 등록됐는지 확인하세요. 아래에서 직접 입력할 수 있습니다.");
+          return;
+        }
+        const ps = new kakao.maps.services.Places();
+        // 제주 밖 결과가 섞이지 않도록 검색어에 지역을 붙입니다.
+        ps.keywordSearch(/제주/.test(q) ? q : "제주 " + q, function (data, status) {
+          if (status !== kakao.maps.services.Status.OK || !data || data.length === 0) {
+            setKakaoStatus("결과가 없습니다. 다른 이름으로 찾거나 아래에서 직접 입력하세요.");
+            return;
+          }
+          const jeju = data.filter(function (d) {
+            return /제주/.test(d.address_name || "") || /제주/.test(d.road_address_name || "");
+          });
+          if (jeju.length === 0) {
+            setKakaoStatus("제주 안에서 찾은 결과가 없습니다. 아래에서 직접 입력하세요.");
+            return;
+          }
+          setKakaoStatus(jeju.length + "곳을 찾았습니다. 하나를 고르면 아래 항목이 채워집니다.");
+          jeju.slice(0, 10).forEach(function (d) {
+            const li = document.createElement("li");
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.innerHTML =
+              '<span class="kr-name">' + escapeHtml(d.place_name) + "</span>" +
+              '<span class="kr-meta">' +
+              escapeHtml((d.road_address_name || d.address_name || "") +
+                (d.category_name ? " · " + d.category_name.split(">").pop().trim() : "")) +
+              "</span>";
+            btn.addEventListener("click", function () { fillFromKakao(d); });
+            li.appendChild(btn);
+            kakaoResults.appendChild(li);
+          });
+        }, { size: 15 });
+      });
+    }
+
+    // 카카오가 주는 것만 채우고, 나머지는 사용자 입력입니다.
+    function fillFromKakao(d) {
+      const addr = d.road_address_name || d.address_name || "";
+      F.name.value = d.place_name || "";
+      F.address.value = addr;
+      F.category.value = inferCategory(d.category_group_code, d.category_name);
+      F.region.value = inferRegion(addr);
+      if (d.phone) F.tip.value = F.tip.value || ("문의 " + d.phone);
+      formError.hidden = true;
+      setKakaoStatus("“" + (d.place_name || "") + "” 을(를) 채웠습니다. 영업시간·가격대·추천 메뉴는 카카오가 주지 않으니 직접 적어 주세요.");
+      F.summary.focus();
+    }
+
+    function openSheet() {
+      backdrop.hidden = false;
+      document.body.style.overflow = "hidden";
+      formError.hidden = true;
+      kakaoBox.hidden = !KAKAO_JS_KEY;
+      // 목록에서 치던 검색어를 그대로 이어받습니다.
+      const q = state.query.trim();
+      if (KAKAO_JS_KEY) {
+        document.getElementById("kakao-query").value = q;
+        kakaoResults.innerHTML = "";
+        setKakaoStatus("");
+        if (q) runKakaoSearch();
+      } else if (q) {
+        F.name.value = q;
+      }
+      (KAKAO_JS_KEY ? document.getElementById("kakao-query") : F.name).focus();
+    }
+
+    function closeSheet() {
+      backdrop.hidden = true;
+      document.body.style.overflow = "";
+      document.getElementById("add-form").reset();
+      F.region.value = REGIONS[0].id;
+      kakaoResults.innerHTML = "";
+      setKakaoStatus("");
+      formError.hidden = true;
+    }
+
+    function saveCustomPlace() {
+      const v = {};
+      Object.keys(F).forEach(function (k) { v[k] = F[k].value.trim(); });
+
+      if (!v.name || !v.address) {
+        formError.textContent = "이름과 주소는 반드시 입력해야 합니다.";
+        formError.hidden = false;
+        (!v.name ? F.name : F.address).focus();
+        return;
+      }
+      // 같은 이름+주소가 이미 있는지 (삭제된 것도 포함)
+      const dup = allPlaces().find(function (p) {
+        return p.name === v.name && p.address === v.address;
+      });
+      if (dup) {
+        formError.textContent = state.hidden.indexOf(dup.id) !== -1
+          ? "이미 있는 장소입니다. 삭제된 상태이니 되돌리기로 복원하세요."
+          : "이미 목록에 있는 장소입니다.";
+        formError.hidden = false;
+        return;
+      }
+
+      state.custom.push({
+        id: "custom-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7),
+        name: v.name, category: v.category, region: v.region, address: v.address,
+        summary: v.summary, highlight: v.highlight, hours: v.hours, price: v.price, tip: v.tip,
+        custom: true,
+      });
+      persistCustom();
+      closeSheet();
+      render();
+    }
+
+    document.getElementById("open-add").addEventListener("click", openSheet);
+    document.getElementById("close-add").addEventListener("click", closeSheet);
+    document.getElementById("cancel-add").addEventListener("click", closeSheet);
+    document.getElementById("save-add").addEventListener("click", saveCustomPlace);
+    document.getElementById("kakao-search-btn").addEventListener("click", runKakaoSearch);
+    document.getElementById("kakao-query").addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { e.preventDefault(); runKakaoSearch(); }
+    });
+    // 배경 클릭·ESC로 닫기
+    backdrop.addEventListener("click", function (e) { if (e.target === backdrop) closeSheet(); });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && !backdrop.hidden) closeSheet();
+    });
 
     // 검색
     const searchInput = document.getElementById("search");
