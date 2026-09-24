@@ -1,0 +1,1735 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>제주 여행 플래너</title>
+  <meta name="description" content="제주도 맛집·카페·명소를 권역별로 모아 보고, 마음에 드는 곳을 담아 나만의 여행 목록을 만드는 모바일 여행 플래너." />
+  <meta name="color-scheme" content="light dark" />
+  <script src="theme.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <style>
+    /* ══ 에디토리얼 네오 브루탈리즘 토큰 ═════════════════════════
+       색: 무채색만 사용. 색상 대신 명도 3단계로 구분합니다.
+       선: 3px 검은 실선 (작은 라벨은 감싸지 않음)
+       그림자: 6px / 4px, 번짐 없음, 방향 고정(오른쪽 아래)
+       모서리: 10px, 알약형은 배지에만
+       타이포: 색이 빠진 만큼 제목이 위계를 떠안습니다.
+       모션: 140ms, hover 색 반전, press는 그림자만큼 눌림          */
+    :root {
+      --paper: #f7f7f5;
+      --surface: #ffffff;
+      --surface-alt: #ececea;
+      --ink: #111111;
+      --ink-soft: #6b6b68;
+      --shadow: #111111;
+
+      /* 명도 3단계 — 카테고리·상태 구분용 (배경/글자 쌍)
+         카드 면(#fff)과 동일한 톤은 구분이 안 되므로 세 단계 모두 카드보다 어둡게 둡니다. */
+      --fill-strong: #111111;
+      --on-strong: #f7f7f5;
+      --fill-mid: #8f8f8b;
+      --on-mid: #111111;
+      --fill-soft: #dcdcd8;
+      --on-soft: #111111;
+
+      --bw: 3px;
+      --sh: 6px 6px 0 var(--shadow);
+      --sh-sm: 4px 4px 0 var(--shadow);
+      --radius: 10px;
+      --radius-sm: 8px;
+      --motion: 140ms;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --paper: #131316;
+        --surface: #1e1e22;
+        --surface-alt: #26262b;
+        --ink: #f2f2ee;
+        --ink-soft: #9a9a96;
+        --shadow: #000000;
+
+        --fill-strong: #f2f2ee;
+        --on-strong: #131316;
+        --fill-mid: #74747e;
+        --on-mid: #ffffff;
+        --fill-soft: #3c3c44;
+        --on-soft: #f2f2ee;
+      }
+    }
+    :root[data-theme="dark"] {
+      --paper: #131316;
+      --surface: #1e1e22;
+      --surface-alt: #26262b;
+      --ink: #f2f2ee;
+      --ink-soft: #9a9a96;
+      --shadow: #000000;
+
+      --fill-strong: #f2f2ee;
+      --on-strong: #131316;
+      --fill-mid: #74747e;
+      --on-mid: #ffffff;
+      --fill-soft: #3c3c44;
+      --on-soft: #f2f2ee;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Noto Sans KR", system-ui, sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      line-height: 1.6;
+      word-break: keep-all;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    .container {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
+
+    /* 아이콘: 2.5px 기하 선 아이콘 한 계열 */
+    .ico {
+      width: 1em;
+      height: 1em;
+      flex: 0 0 auto;
+      stroke: currentColor;
+      stroke-width: 2.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      vertical-align: -0.125em;
+    }
+
+    /* press는 그림자만큼 눌린다 (주변 레이아웃은 움직이지 않음) */
+    .press {
+      transition: transform var(--motion) ease, box-shadow var(--motion) ease,
+                  background var(--motion) ease, color var(--motion) ease;
+    }
+    .press:active {
+      transform: translate(4px, 4px);
+      box-shadow: 0 0 0 var(--shadow);
+    }
+
+    /* ── 헤더 ─────────────────────────────────────────────────────────── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: var(--paper);
+      border-bottom: var(--bw) solid var(--ink);
+    }
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      height: 64px;
+    }
+    .logo {
+      font-weight: 900;
+      font-size: 1.3rem;
+      letter-spacing: -0.04em;
+      color: var(--ink);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .logo span {
+      display: inline-block;
+      background: var(--ink);
+      color: var(--paper);
+      padding: 0 7px;
+      border-radius: 5px;
+    }
+
+    .theme-toggle {
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+      border: var(--bw) solid var(--ink);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--ink);
+      box-shadow: var(--sh-sm);
+      font-size: 1.1rem;
+      line-height: 1;
+      cursor: pointer;
+      transition: transform var(--motion) ease, box-shadow var(--motion) ease;
+    }
+    .theme-toggle:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--shadow); }
+
+    /* ── 히어로 ───────────────────────────────────────────────────────── */
+    .hero {
+      border-bottom: var(--bw) solid var(--ink);
+      padding: 40px 0 36px;
+    }
+    .badge {
+      display: inline-block;
+      background: var(--fill-strong);
+      color: var(--on-strong);
+      border: var(--bw) solid var(--ink);
+      border-radius: 999px; /* 알약형은 배지에만 */
+      box-shadow: var(--sh-sm);
+      padding: 5px 15px;
+      font-size: 0.8rem;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+      margin-bottom: 18px;
+    }
+    /* 색이 빠진 만큼 제목을 키워 위계를 잡습니다. */
+    .hero h1 {
+      font-size: clamp(2.3rem, 10vw, 4.1rem);
+      font-weight: 900;
+      line-height: 1.06;
+      letter-spacing: -0.05em;
+      margin-bottom: 18px;
+    }
+    .hero h1 em {
+      font-style: normal;
+      display: inline-block;
+      background: var(--fill-strong);
+      color: var(--on-strong);
+      border: var(--bw) solid var(--ink);
+      border-radius: 6px;
+      box-shadow: var(--sh-sm);
+      padding: 0 10px;
+    }
+    .hero p {
+      color: var(--ink-soft);
+      font-size: 1rem;
+      font-weight: 500;
+      max-width: 560px;
+    }
+
+    /* ── 필터 바 ──────────────────────────────────────────────────────── */
+    .filters {
+      position: sticky;
+      top: 64px;
+      z-index: 20;
+      background: var(--surface-alt);
+      border-bottom: var(--bw) solid var(--ink);
+      padding: 13px 0;
+    }
+    .filter-row + .filter-row { margin-top: 10px; }
+    .filter-label {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--ink-soft);
+      margin-bottom: 8px;
+    }
+    .chips {
+      display: flex;
+      gap: 9px;
+      overflow-x: auto;
+      padding: 2px 2px 7px;
+      scrollbar-width: none;
+    }
+    .chips::-webkit-scrollbar { display: none; }
+
+    .chip {
+      flex: 0 0 auto;
+      padding: 8px 15px;
+      border: var(--bw) solid var(--ink);
+      border-radius: 999px; /* 필터 배지 */
+      background: var(--surface);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: var(--sh-sm);
+      transition: transform var(--motion) ease, box-shadow var(--motion) ease,
+                  background var(--motion) ease, color var(--motion) ease;
+    }
+    .chip:hover { background: var(--ink); color: var(--paper); } /* hover 색 반전 */
+    .chip:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--shadow); }
+    .chip[aria-pressed="true"] {
+      background: var(--fill-strong);
+      color: var(--on-strong);
+      font-weight: 900;
+      transform: translate(4px, 4px);
+      box-shadow: 0 0 0 var(--shadow);
+    }
+    .chip[aria-pressed="true"]:hover {
+      background: var(--fill-strong);
+      color: var(--on-strong);
+    }
+
+    /* ── 툴바 (검색 + 보기 전환) ──────────────────────────────────────── */
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 11px;
+    }
+    .search-wrap {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      flex: 1 1 210px;
+      min-width: 0;
+      padding: 0 13px;
+      min-height: 46px;
+      background: var(--surface);
+      border: var(--bw) solid var(--ink);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--sh-sm);
+      transition: transform var(--motion) ease, box-shadow var(--motion) ease;
+    }
+    /* 필드 전체가 눌리므로 안쪽 아이콘과 어긋나지 않습니다. */
+    .search-wrap:focus-within {
+      transform: translate(4px, 4px);
+      box-shadow: 0 0 0 var(--shadow);
+    }
+    .search-wrap > .ico { color: var(--ink-soft); width: 1.05em; height: 1.05em; }
+    #search {
+      flex: 1;
+      min-width: 0;
+      border: none;
+      background: transparent;
+      color: var(--ink);
+      font: inherit;
+      font-size: 0.92rem;
+      font-weight: 700;
+      outline: none;
+    }
+    #search::placeholder { color: var(--ink-soft); font-weight: 500; }
+    #search::-webkit-search-cancel-button { display: none; }
+    .search-clear {
+      flex: 0 0 auto;
+      width: 28px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--ink);
+      border-radius: 6px;
+      background: var(--surface-alt);
+      color: var(--ink);
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: background var(--motion) ease, color var(--motion) ease;
+    }
+    .search-clear:hover { background: var(--ink); color: var(--paper); }
+    .search-clear[hidden] { display: none; }
+
+    .view-toggle {
+      display: flex;
+      flex: 0 0 auto;
+      background: var(--surface);
+      border: var(--bw) solid var(--ink);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--sh-sm);
+      overflow: hidden;
+    }
+    .view-toggle button {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 46px;
+      padding: 0 15px;
+      border: none;
+      background: transparent;
+      color: var(--ink);
+      font: inherit;
+      font-size: 0.87rem;
+      font-weight: 900;
+      cursor: pointer;
+      transition: background var(--motion) ease, color var(--motion) ease;
+    }
+    .view-toggle button + button { border-left: var(--bw) solid var(--ink); }
+    .view-toggle button:hover { background: var(--surface-alt); }
+    .view-toggle button[aria-pressed="true"] {
+      background: var(--fill-strong);
+      color: var(--on-strong);
+    }
+
+    /* ── 삭제 복원 바 ─────────────────────────────────────────────────── */
+    .restore-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+      padding: 12px 15px;
+      background: var(--surface-alt);
+      border: var(--bw) dashed var(--ink);
+      border-radius: var(--radius);
+      font-size: 0.87rem;
+      font-weight: 700;
+    }
+    .restore-bar[hidden] { display: none; }
+    .restore-bar b { font-weight: 900; }
+    .btn-restore {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 40px;
+      padding: 8px 14px;
+      border: var(--bw) solid var(--ink);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--ink);
+      box-shadow: var(--sh-sm);
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform var(--motion) ease, box-shadow var(--motion) ease,
+                  background var(--motion) ease, color var(--motion) ease;
+    }
+    .btn-restore:hover { background: var(--ink); color: var(--paper); }
+    .btn-restore:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--shadow); }
+
+    /* ── 섹션 ─────────────────────────────────────────────────────────── */
+    section { padding: 32px 0 40px; }
+    .section-soft { background: var(--surface-alt); border-top: var(--bw) solid var(--ink); }
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-size: 1.4rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      margin-bottom: 6px;
+    }
+    .section-title .ico { width: 1.05em; height: 1.05em; }
+    .section-desc {
+      color: var(--ink-soft);
+      font-size: 0.92rem;
+      font-weight: 500;
+      margin-bottom: 18px;
+    }
+
+    /* ── 안내 배너 ────────────────────────────────────────────────────── */
+    .notice {
+      display: flex;
+      gap: 11px;
+      align-items: flex-start;
+      margin-bottom: 18px;
+      padding: 14px 16px;
+      background: var(--surface-alt);
+      color: var(--ink);
+      border: var(--bw) solid var(--ink);
+      border-radius: var(--radius);
+      box-shadow: var(--sh);
+      font-size: 0.89rem;
+      font-weight: 500;
+      line-height: 1.55;
+    }
+    .notice .ico { width: 1.25em; height: 1.25em; margin-top: 0.1em; }
+    .notice strong { font-weight: 900; }
+
+    .result-count {
+      display: inline-block;
+      background: var(--surface);
+      color: var(--ink);
+      border: var(--bw) solid var(--ink);
+      border-radius: 999px; /* 카운트 배지 */
+      box-shadow: var(--sh-sm);
+      padding: 6px 15px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 22px;
+    }
+    .result-count b { font-weight: 900; }
+
+    /* ── 장소 카드 ────────────────────────────────────────────────────── */
+    .place-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 30px 20px;
+    }
+    .place {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      margin-top: 19px; /* 폴더 탭 자리 */
+      padding: 18px;
+      background: var(--surface);
+      border: var(--bw) solid var(--ink);
+      border-radius: var(--radius);
+      box-shadow: var(--sh);
+    }
+    /* 폴더 탭 — 카드 상단과 끊김 없이 이어지도록 카드 테두리 위로 3px 겁칩니다. */
+    .place-tab {
+      position: absolute;
+      top: calc(-19px - var(--bw));
+      left: 18px;
+      width: 76px;
+      height: calc(19px + var(--bw));
+      background: var(--fill-mid);
+      border: var(--bw) solid var(--ink);
+      border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      box-shadow: 6px -3px 0 var(--shadow);
+    }
+    /* 카테고리는 색 대신 명도 3단계로 구분합니다. */
+    .place[data-category="맛집"] .place-tab { background: var(--fill-strong); }
+    .place[data-category="카페"] .place-tab { background: var(--fill-mid); }
+    .place[data-category="명소"] .place-tab { background: var(--fill-soft); }
+
+    .place-head {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      margin-bottom: 13px;
+    }
+    .place-headtext { min-width: 0; }
+    /* 주소는 리스트형에서만 보입니다 (카드형은 상세 표에 이미 있음). */
+    .place-addr { display: none; }
+    .place-icon {
+      flex: 0 0 auto;
+      width: 50px;
+      height: 50px;
+      display: grid;
+      place-items: center;
+      background: var(--fill-mid);
+      color: var(--on-mid);
+      border: var(--bw) solid var(--ink);
+      border-radius: var(--radius-sm);
+      font-size: 1.6rem;
+    }
+    .place[data-category="맛집"] .place-icon { background: var(--fill-strong); color: var(--on-strong); }
+    .place[data-category="카페"] .place-icon { background: var(--fill-mid); color: var(--on-mid); }
+    .place[data-category="명소"] .place-icon { background: var(--fill-soft); color: var(--on-soft); }
+
+    .place h3 {
+      font-size: 1.14rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1.3;
+      min-width: 0;
+    }
+
+    /* 작은 라벨은 테두리로 감싸지 않는다 */
+    .place-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 6px;
+    }
+    .tag {
+      padding: 2px 9px;
+      border-radius: 5px;
+      background: var(--surface-alt);
+      color: var(--ink-soft);
+      font-size: 0.74rem;
+      font-weight: 700;
+    }
+    .tag-category {
+      background: var(--ink);
+      color: var(--paper);
+      font-weight: 900;
+    }
+
+    .place-summary {
+      font-size: 0.94rem;
+      font-weight: 500;
+      margin-bottom: 14px;
+    }
+
+    /* 상세 정보는 읽기 영역 — 중립 표현 유지 */
+    .place-meta {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 16px;
+      padding-top: 14px;
+      border-top: 2px solid var(--ink);
+      font-size: 0.86rem;
+      color: var(--ink-soft);
+    }
+    .place-meta > div {
+      display: grid;
+      grid-template-columns: 66px 1fr;
+      gap: 10px;
+      align-items: start;
+    }
+    .place-meta dt {
+      font-weight: 900;
+      font-size: 0.76rem;
+      color: var(--ink);
+      letter-spacing: -0.01em;
+    }
+    .place-meta dd { font-weight: 500; line-height: 1.5; }
+
+    .place-actions { display: flex; gap: 10px; margin-top: auto; }
+    .btn-save,
+    .btn-map,
+    .btn-delete {
+      flex: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 46px;
+      padding: 10px 12px;
+      border: var(--bw) solid var(--ink);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--sh-sm);
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 900;
+      text-decoration: none;
+      cursor: pointer;
+      transition: transform var(--motion) ease, box-shadow var(--motion) ease,
+                  background var(--motion) ease, color var(--motion) ease;
+    }
+    .btn-save:active,
+    .btn-map:active,
+    .btn-delete:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--shadow); }
+
+    /* 삭제는 복원 가능하므로 파괴적 강조 없이 보조 버튼으로 둡니다. */
+    .btn-delete {
+      flex: 0 0 auto;
+      width: 46px;
+      padding: 10px 0;
+      background: var(--surface-alt);
+      color: var(--ink-soft);
+    }
+    .btn-delete:hover { background: var(--ink); color: var(--paper); }
+
+    /* 담기 → 담김 상태를 색 대신 면 반전으로 구분합니다. */
+    .btn-save { background: var(--surface); color: var(--ink); }
+    .btn-save:hover { background: var(--ink); color: var(--paper); }
+    .btn-save[aria-pressed="true"] { background: var(--fill-strong); color: var(--on-strong); }
+    .btn-save[aria-pressed="true"]:hover { background: var(--fill-mid); color: var(--on-mid); }
+    .btn-map { background: var(--surface); color: var(--ink); }
+    .btn-map:hover { background: var(--ink); color: var(--paper); }
+
+    /* ── 리스트형 보기 ──────────────────────────────────────────────────
+       같은 DOM을 CSS로만 재배치합니다 (렌더 분기 없음). */
+    .place-grid[data-view="list"] {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .place-grid[data-view="list"] .place {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 13px;
+      margin-top: 0;
+      padding: 12px 14px;
+      box-shadow: var(--sh-sm);
+    }
+    .place-grid[data-view="list"] .place-tab,
+    .place-grid[data-view="list"] .place-summary,
+    .place-grid[data-view="list"] .place-meta { display: none; }
+
+    .place-grid[data-view="list"] .place-head {
+      display: contents; /* 아이콘·본문을 바깥 그리드 칸으로 올립니다 */
+    }
+    .place-grid[data-view="list"] .place-icon {
+      width: 42px;
+      height: 42px;
+      font-size: 1.3rem;
+    }
+    .place-grid[data-view="list"] .place h3 { font-size: 1rem; }
+    .place-grid[data-view="list"] .place-tags { margin-top: 4px; }
+    .place-grid[data-view="list"] .place-addr {
+      display: block;
+      margin-top: 3px;
+      color: var(--ink-soft);
+      font-size: 0.79rem;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* 리스트형에서는 버튼을 아이콘만 남긴 정사각형으로 줄입니다. */
+    .place-grid[data-view="list"] .place-actions {
+      margin-top: 0;
+      gap: 7px;
+    }
+    .place-grid[data-view="list"] .btn-save,
+    .place-grid[data-view="list"] .btn-map,
+    .place-grid[data-view="list"] .btn-delete {
+      flex: 0 0 auto;
+      width: 42px;
+      min-height: 42px;
+      padding: 0;
+    }
+    .place-grid[data-view="list"] .btn-label { display: none; }
+
+    /* 리스트형은 밀도가 목적이므로 좌은 화면에서도 한 줄을 유지합니다. */
+    @media (max-width: 420px) {
+      .place-grid[data-view="list"] .place { gap: 10px; padding: 10px 11px; }
+      .place-grid[data-view="list"] .place-icon { width: 38px; height: 38px; font-size: 1.15rem; }
+      .place-grid[data-view="list"] .place h3 { font-size: 0.94rem; }
+      .place-grid[data-view="list"] .place-actions { gap: 5px; }
+      .place-grid[data-view="list"] .btn-save,
+      .place-grid[data-view="list"] .btn-map,
+      .place-grid[data-view="list"] .btn-delete {
+        width: 36px;
+        min-height: 36px;
+      }
+    }
+
+    @media (max-width: 340px) {
+      /* 한 줄이 정말 불가능한 폭에서만 버튼을 아래로 내립니다. */
+      .place-grid[data-view="list"] .place {
+        grid-template-columns: auto minmax(0, 1fr);
+      }
+      .place-grid[data-view="list"] .place-actions {
+        grid-column: 1 / -1;
+        justify-content: flex-end;
+      }
+    }
+
+    /* ── 빈 상태 ──────────────────────────────────────────────────────── */
+    .empty {
+      grid-column: 1 / -1;
+      padding: 32px 18px;
+      text-align: center;
+      color: var(--ink-soft);
+      font-size: 0.93rem;
+      font-weight: 700;
+      background: var(--surface);
+      border: var(--bw) dashed var(--ink);
+      border-radius: var(--radius);
+    }
+
+    /* ── 내 여행 목록 ─────────────────────────────────────────────────── */
+    .saved-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .saved-head .section-desc { margin-bottom: 0; }
+    .saved-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 30px;
+      height: 30px;
+      padding: 0 9px;
+      background: var(--fill-strong);
+      color: var(--on-strong);
+      border: var(--bw) solid var(--ink);
+      border-radius: 999px; /* 카운트 배지 */
+      box-shadow: var(--sh-sm);
+      font-size: 0.87rem;
+      font-weight: 900;
+    }
+    .btn-clear {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 10px 16px;
+      min-height: 44px;
+      border: var(--bw) solid var(--ink);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--ink);
+      box-shadow: var(--sh-sm);
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform var(--motion) ease, box-shadow var(--motion) ease,
+                  background var(--motion) ease, color var(--motion) ease;
+    }
+    .btn-clear:hover { background: var(--ink); color: var(--paper); }
+    .btn-clear:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--shadow); }
+
+    .saved-region { margin-bottom: 24px; }
+    .saved-region h3 {
+      display: inline-block;
+      margin-bottom: 12px;
+      padding: 5px 14px;
+      background: var(--ink);
+      color: var(--paper);
+      border-radius: 999px; /* 그룹 배지 */
+      font-size: 0.92rem;
+      font-weight: 900;
+    }
+    .saved-region h3 span { font-weight: 500; opacity: 0.72; }
+
+    .saved-list { list-style: none; display: grid; gap: 10px; }
+    .saved-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 13px 15px;
+      background: var(--surface);
+      border: var(--bw) solid var(--ink);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--sh-sm);
+    }
+    .saved-item-main { min-width: 0; }
+    .saved-item-name { font-weight: 900; font-size: 0.97rem; }
+    .saved-item-sub { color: var(--ink-soft); font-size: 0.81rem; font-weight: 500; }
+    .saved-item-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .icon-btn {
+      width: 46px;
+      height: 46px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: var(--bw) solid var(--ink);
+      border-radius: var(--radius-sm);
+      background: var(--surface-alt);
+      color: var(--ink);
+      box-shadow: var(--sh-sm);
+      font-size: 1.05rem;
+      text-decoration: none;
+      cursor: pointer;
+      transition: transform var(--motion) ease, box-shadow var(--motion) ease,
+                  background var(--motion) ease, color var(--motion) ease;
+    }
+    .icon-btn:hover { background: var(--ink); color: var(--paper); }
+    .icon-btn:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--shadow); }
+
+    /* ── 푸터 ─────────────────────────────────────────────────────────── */
+    footer {
+      border-top: var(--bw) solid var(--ink);
+      background: var(--ink);
+      padding: 26px 0;
+      text-align: center;
+      color: var(--paper);
+      font-size: 0.84rem;
+      font-weight: 700;
+    }
+
+    /* ── 반응형 ───────────────────────────────────────────────────────── */
+    @media (min-width: 680px) { .place-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 1000px) { .place-grid { grid-template-columns: repeat(3, 1fr); } }
+
+    @media (max-width: 600px) {
+      /* 좁은 화면에서는 장식이 콘텐츠를 압도하지 않도록 고정 영역을 줄입니다. */
+      header { position: static; }
+      .filters { top: 0; padding: 10px 0; }
+      .filter-label { display: none; }
+      .filter-row + .filter-row { margin-top: 8px; }
+
+      nav { height: 58px; gap: 8px; }
+      .logo { font-size: 1.1rem; }
+      .theme-toggle { width: 40px; height: 40px; font-size: 1rem; }
+
+      .hero { padding: 30px 0 28px; }
+      .chip { padding: 7px 13px; font-size: 0.86rem; }
+
+      /* 툴바가 두 줄로 접히면 고정 영역이 화면을 잡아먹습니다.
+         보기 전환을 아이콘만 남겨 검색창과 한 줄에 둡니다. */
+      .toolbar { flex-wrap: nowrap; gap: 8px; margin-bottom: 8px; }
+      .search-wrap { flex: 1 1 auto; min-height: 42px; padding: 0 11px; }
+      .view-toggle button {
+        min-height: 42px;
+        width: 42px;
+        padding: 0;
+        justify-content: center;
+      }
+      .view-toggle .btn-label { display: none; }
+
+      :root { --sh: 5px 5px 0 var(--shadow); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .press, .chip, .btn-save, .btn-map, .btn-clear, .icon-btn, .theme-toggle {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <nav>
+        <span class="logo">제주<span>플래너</span></span>
+        <button class="theme-toggle" type="button" aria-label="테마 전환">🌙</button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <span class="badge">제주도 여행 플래너</span>
+        <h1>제주에서 뭐 먹고<br /><em>어디 갈지</em> 한 번에</h1>
+        <p>맛집·카페·명소를 권역별로 모았습니다. 마음에 드는 곳을 담으면 내 여행 목록에 저장돼요.</p>
+      </div>
+    </section>
+
+    <div class="filters">
+      <div class="container">
+        <div class="toolbar">
+          <div class="search-wrap">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg>
+            <input id="search" type="search" autocomplete="off"
+                   placeholder="이름·지역·메뉴로 검색" aria-label="장소 검색" />
+            <button class="search-clear" id="search-clear" type="button" aria-label="검색어 지우기" hidden>
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+            </button>
+          </div>
+          <div class="view-toggle" role="group" aria-label="보기 방식">
+            <button type="button" id="view-grid" data-view="grid" aria-pressed="true">
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg>
+              <span class="btn-label">카드</span>
+            </button>
+            <button type="button" id="view-list" data-view="list" aria-pressed="false">
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5h16M4 12h16M4 17.5h16"/></svg>
+              <span class="btn-label">리스트</span>
+            </button>
+          </div>
+        </div>
+        <div class="filter-row">
+          <span class="filter-label" id="label-category">카테고리</span>
+          <div class="chips" id="category-chips" role="group" aria-labelledby="label-category"></div>
+        </div>
+        <div class="filter-row">
+          <span class="filter-label" id="label-region">권역</span>
+          <div class="chips" id="region-chips" role="group" aria-labelledby="label-region"></div>
+        </div>
+      </div>
+    </div>
+
+    <section id="places">
+      <div class="container">
+        <p class="notice">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.6v.01"/></svg>
+          <span><strong>영업시간과 가격대는 변동될 수 있습니다.</strong> 방문 전 카카오맵 링크에서 최신 정보를 꼭 확인하세요.</span>
+        </p>
+        <p class="result-count" id="result-count" aria-live="polite"></p>
+        <div class="restore-bar" id="restore-bar" hidden>
+          <span><b id="hidden-count">0</b>곳을 목록에서 삭제했습니다.</span>
+          <button class="btn-restore" type="button" id="restore-all">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10a8 8 0 1 1 1.6 6M4 4.5V10h5.5"/></svg>
+            되돌리기
+          </button>
+        </div>
+        <div class="place-grid" id="place-grid"></div>
+      </div>
+    </section>
+
+    <section id="my-list" class="section-soft">
+      <div class="container">
+        <div class="saved-head">
+          <div>
+            <h2 class="section-title">
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V4h8v3M3 12h18"/></svg>
+              내 여행 목록 <span class="saved-count" id="saved-count">0</span>
+            </h2>
+            <p class="section-desc">담은 장소를 권역별로 묶어 동선을 잡아 보세요.</p>
+          </div>
+          <button class="btn-clear" type="button" id="clear-saved">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>
+            전체 비우기
+          </button>
+        </div>
+        <div id="saved-container"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>장소 정보는 참고용입니다. 영업시간·가격·휴무일은 방문 전 확인해 주세요.</p>
+    </div>
+  </footer>
+
+  <script>
+    // ── 권역 정의 (표시 순서 = 동선 순서) ────────────────────────────────
+    const REGIONS = [
+      { id: "jeju-city", name: "제주시" },
+      { id: "west", name: "애월·한림" },
+      { id: "east", name: "조천·구좌" },
+      { id: "seongsan", name: "성산·표선" },
+      { id: "seogwipo", name: "서귀포·중문" },
+    ];
+
+    const CATEGORIES = ["맛집", "카페", "명소"];
+
+    // ── 아이콘 (2.5px 기하 선 아이콘 한 계열) ────────────────────────────
+    function icon(path, extraClass) {
+      return '<svg class="ico' + (extraClass ? " " + extraClass : "") +
+        '" viewBox="0 0 24 24" aria-hidden="true">' + path + "</svg>";
+    }
+    const ICON_PATHS = {
+      맛집: '<path d="M6 3v6a2 2 0 0 0 4 0V3M8 9v12M16.5 3c1.8 2.6 1.8 6 0 8.6M16.5 11.6V21"/>',
+      카페: '<path d="M4 8h12v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V8z"/><path d="M16 9.5h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M7 2.5v2M11 2.5v2"/>',
+      명소: '<path d="M3 19l6-10 3.5 5.5L15 11l6 8H3z"/><circle cx="7.5" cy="5.5" r="2"/>',
+      pin: '<path d="M12 21s7-5.8 7-11a7 7 0 1 0-14 0c0 5.2 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/>',
+      plus: '<path d="M12 5v14M5 12h14"/>',
+      check: '<path d="M4.5 12.5l5 5 10-11"/>',
+      close: '<path d="M6 6l12 12M18 6L6 18"/>',
+      trash: '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
+    };
+
+    const PLACES = [
+      // 제주시
+      {
+        id: "woojin",
+        name: "우진해장국",
+        category: "맛집",
+        region: "jeju-city",
+        address: "제주시 서사로 11",
+        summary: "제주 도착하자마자 한 그릇 하기 좋은 고사리육개장 노포.",
+        highlight: "고사리육개장, 사골해장국",
+        hours: "06:00~22:00",
+        price: "1만원대",
+        tip: "웨이팅이 길어 오픈 직후나 오후 3시쯤이 여유롭습니다.",
+      },
+      {
+        id: "olle-noodle",
+        name: "올레국수",
+        category: "맛집",
+        region: "jeju-city",
+        address: "제주시 귀아랑길 24",
+        summary: "진한 돼지육수에 두툼한 수육을 올린 제주식 고기국수.",
+        highlight: "고기국수, 수육",
+        hours: "08:30~15:00 (재료 소진 시 마감)",
+        price: "1만원 내외",
+        tip: "점심 전후로 재료가 일찍 떨어질 수 있어 오전 방문을 권합니다.",
+      },
+      {
+        id: "apbaengdi",
+        name: "앞뱅디식당",
+        category: "맛집",
+        region: "jeju-city",
+        address: "제주시 신광로 36",
+        summary: "현지인 단골이 많은 각재기국 전문점. 제주 향토 국물의 정석.",
+        highlight: "각재기국, 멜국",
+        hours: "07:00~21:00",
+        price: "1만원 내외",
+        tip: "국물이 낯설면 멜조림이나 고등어조림을 곁들이면 좋습니다.",
+      },
+      {
+        id: "donsadon",
+        name: "돈사돈",
+        category: "맛집",
+        region: "jeju-city",
+        address: "제주시 원노형로 88",
+        summary: "두껍게 썬 근고기를 직원이 직접 구워 주는 흑돼지 노포.",
+        highlight: "흑돼지 근고기, 멸치젓 소스",
+        hours: "12:00~22:00",
+        price: "1인 2~3만원대",
+        tip: "예약을 받지 않아 저녁 대기가 깁니다. 이른 저녁을 추천합니다.",
+      },
+      {
+        id: "abebe",
+        name: "아베베베이커리",
+        category: "카페",
+        region: "jeju-city",
+        address: "제주시 동문로 2-1",
+        summary: "동문시장 구경 전후로 들르기 좋은 소금빵 베이커리 카페.",
+        highlight: "소금빵, 크림빵",
+        hours: "08:00~20:00",
+        price: "5천~1만원",
+        tip: "인기 빵은 오후에 품절됩니다. 시장 공영주차장 이용이 편해요.",
+      },
+      {
+        id: "dongmun",
+        name: "동문재래시장",
+        category: "명소",
+        region: "jeju-city",
+        address: "제주시 관덕로14길 20",
+        summary: "제주 먹거리와 기념품을 한 번에 둘러보는 대표 전통시장.",
+        highlight: "흑돼지 꼬치, 오메기떡, 야시장 먹거리",
+        hours: "08:00~21:00 (야시장 18:00~24:00)",
+        price: "먹거리 3천~1만원",
+        tip: "야시장은 저녁에만 열립니다. 시장 주차장이 금방 찹니다.",
+      },
+      {
+        id: "yongduam",
+        name: "용두암",
+        category: "명소",
+        region: "jeju-city",
+        address: "제주시 용두암길 15",
+        summary: "공항에서 10분 거리, 짧게 들르기 좋은 용머리 모양 현무암 해안.",
+        highlight: "해안 산책로, 일몰",
+        hours: "24시간 (야간 조명 운영)",
+        price: "무료",
+        tip: "비행기 시간이 애매할 때 들르기 좋습니다. 바람이 강해 겉옷 필수.",
+      },
+      {
+        id: "hallasumokwon",
+        name: "한라수목원",
+        category: "명소",
+        region: "jeju-city",
+        address: "제주시 수목원길 72",
+        summary: "제주 자생식물을 편한 길로 걷는 도심 속 숲.",
+        highlight: "평탄한 산책로, 전시온실",
+        hours: "산책로 상시 개방 (전시온실 09:00~18:00)",
+        price: "무료 (주차 유료)",
+        tip: "유모차와 휠체어도 다닐 만한 평탄한 구간이 많습니다.",
+      },
+
+      // 애월·한림
+      {
+        id: "suudong",
+        name: "수우동",
+        category: "맛집",
+        region: "west",
+        address: "제주시 한림읍 협재1길 11",
+        summary: "협재 해변 근처, 탱글한 면발의 사누키 우동집.",
+        highlight: "붓카케우동, 튀김",
+        hours: "10:30~16:00 (재료 소진 시 마감)",
+        price: "1만원 내외",
+        tip: "해변 나들이 전 점심으로 들르면 대기가 짧습니다.",
+      },
+      {
+        id: "bomnal",
+        name: "카페 봄날",
+        category: "카페",
+        region: "west",
+        address: "제주시 애월읍 애월로1길 25",
+        summary: "한담 해안을 통창으로 바라보는 애월 대표 오션뷰 카페.",
+        highlight: "오션뷰 좌석, 한담 산책로 연결",
+        hours: "09:00~20:00",
+        price: "7천~1만원",
+        tip: "창가 자리 경쟁이 치열합니다. 산책로 방향 입구가 한산해요.",
+      },
+      {
+        id: "mongsang",
+        name: "몽상드애월",
+        category: "카페",
+        region: "west",
+        address: "제주시 애월읍 애월북서로 56-1",
+        summary: "바다를 정면으로 두는 넓은 테라스형 애월 카페.",
+        highlight: "테라스 좌석, 노을",
+        hours: "09:00~20:00",
+        price: "8천~1만2천원",
+        tip: "일몰 1시간 전이 가장 붐빕니다. 주차장이 협소해요.",
+      },
+      {
+        id: "bluebottle-jeju",
+        name: "블루보틀 제주",
+        category: "카페",
+        region: "west",
+        address: "제주시 한림읍 한림로 675",
+        summary: "돌담과 창밖 풍경을 살린 제주 분위기의 스페셜티 커피.",
+        highlight: "드립 커피, 제주 한정 메뉴",
+        hours: "09:00~19:00",
+        price: "7천~1만원",
+        tip: "주말 오후에는 좌석 회전이 느립니다. 평일 오전을 추천합니다.",
+      },
+      {
+        id: "cafe-gongbaek",
+        name: "카페 공백",
+        category: "카페",
+        region: "west",
+        address: "제주시 한림읍 한림로 542",
+        summary: "창고를 개조한 대형 공간에서 바다를 바라보는 카페.",
+        highlight: "대형 통창, 시그니처 음료",
+        hours: "10:00~19:00",
+        price: "8천~1만2천원",
+        tip: "공간이 넓어 단체도 앉기 좋지만 주말엔 입구 대기가 생깁니다.",
+      },
+      {
+        id: "hyeopjae",
+        name: "협재해수욕장",
+        category: "명소",
+        region: "west",
+        address: "제주시 한림읍 협재리",
+        summary: "비양도를 배경으로 에메랄드빛 얕은 물이 펼쳐지는 해변.",
+        highlight: "비양도 조망, 얕은 수심",
+        hours: "24시간 (여름 물놀이 09:00~19:00)",
+        price: "무료 (주차 유료)",
+        tip: "썰물 때 물이 맑고 얕아 아이와 놀기 좋습니다.",
+      },
+      {
+        id: "handam",
+        name: "한담해안산책로",
+        category: "명소",
+        region: "west",
+        address: "제주시 애월읍 애월리",
+        summary: "곽지에서 한담까지 이어지는 1.2km 해안 산책길.",
+        highlight: "해안 절경, 카페 밀집 구간",
+        hours: "24시간",
+        price: "무료",
+        tip: "그늘이 거의 없어 한여름 낮보다 해 질 무렵이 좋습니다.",
+      },
+
+      // 조천·구좌
+      {
+        id: "myeongjin",
+        name: "명진전복",
+        category: "맛집",
+        region: "east",
+        address: "제주시 구좌읍 해맞이해안로 1282",
+        summary: "구좌 해안도로 드라이브 중 들르는 전복돌솥밥 맛집.",
+        highlight: "전복돌솥밥, 전복구이",
+        hours: "09:30~21:00 (브레이크타임 있음)",
+        price: "2만원대",
+        tip: "대기표를 먼저 받고 근처 해안도로를 걷다 오면 효율적입니다.",
+      },
+      {
+        id: "delmoondo",
+        name: "델문도",
+        category: "카페",
+        region: "east",
+        address: "제주시 조천읍 조함해안로 519-10",
+        summary: "함덕 해변 바로 앞에서 직접 로스팅한 커피를 마시는 카페.",
+        highlight: "함덕 오션뷰, 자체 로스팅",
+        hours: "07:00~22:00",
+        price: "7천~1만원",
+        tip: "이른 아침에 열어 해변 산책 후 커피 마시기 좋습니다.",
+      },
+      {
+        id: "bijarim",
+        name: "비자림",
+        category: "명소",
+        region: "east",
+        address: "제주시 구좌읍 비자숲길 55",
+        summary: "수백 년 된 비자나무가 우거진 평탄한 숲길.",
+        highlight: "천년 비자나무, 흙길 산책",
+        hours: "09:00~18:00 (입장 마감 17:00)",
+        price: "성인 3천원",
+        tip: "비 온 다음 날 숲 향이 가장 좋습니다. 운동화를 권합니다.",
+      },
+      {
+        id: "woljeong",
+        name: "월정리해변",
+        category: "명소",
+        region: "east",
+        address: "제주시 구좌읍 월정리",
+        summary: "하얀 모래와 카페 거리로 유명한 동부 해변.",
+        highlight: "해변 카페 거리, 풍력발전기 풍경",
+        hours: "24시간",
+        price: "무료 (주차 유료)",
+        tip: "해변 앞 도로는 주차가 어렵습니다. 공영주차장을 이용하세요.",
+      },
+      {
+        id: "hamdeok",
+        name: "함덕해수욕장",
+        category: "명소",
+        region: "east",
+        address: "제주시 조천읍 조함해안로 525",
+        summary: "서우봉을 낀 완만한 백사장. 편의시설이 잘 갖춰져 있습니다.",
+        highlight: "서우봉 산책로, 얕은 물놀이 구간",
+        hours: "24시간 (여름 물놀이 09:00~19:00)",
+        price: "무료 (주차 유료)",
+        tip: "샤워장·화장실이 가까워 아이 동반 가족에게 편합니다.",
+      },
+      {
+        id: "saryeoni",
+        name: "사려니숲길",
+        category: "명소",
+        region: "east",
+        address: "제주시 조천읍 교래리",
+        summary: "삼나무가 늘어선 완만한 숲길. 더운 날에도 시원합니다.",
+        highlight: "삼나무길, 완만한 흙길",
+        hours: "09:00~17:00 (계절별 변동)",
+        price: "무료",
+        tip: "구간이 길어 왕복 계획을 미리 정하세요. 화장실이 드뭅니다.",
+      },
+
+      // 성산·표선
+      {
+        id: "ojo-haenyeo",
+        name: "오조해녀의집",
+        category: "맛집",
+        region: "seongsan",
+        address: "서귀포시 성산읍 한도로 141-13",
+        summary: "해녀가 직접 잡은 전복으로 끓여 내는 담백한 전복죽.",
+        highlight: "전복죽, 성게미역국",
+        hours: "08:00~19:00",
+        price: "1만5천원 내외",
+        tip: "성산일출봉 일출을 본 뒤 아침 식사로 들르기 좋습니다.",
+      },
+      {
+        id: "glasshouse",
+        name: "글라스하우스",
+        category: "카페",
+        region: "seongsan",
+        address: "서귀포시 성산읍 섭지코지로 107",
+        summary: "섭지코지 끝, 통유리 너머로 성산일출봉이 보이는 카페.",
+        highlight: "성산일출봉 조망, 건축물 자체",
+        hours: "09:00~19:00",
+        price: "1만원 내외",
+        tip: "섭지코지 주차장에서 도보 10분 정도 걸어 들어갑니다.",
+      },
+      {
+        id: "seongsan",
+        name: "성산일출봉",
+        category: "명소",
+        region: "seongsan",
+        address: "서귀포시 성산읍 일출로 284-12",
+        summary: "분화구 능선까지 오르는 제주 대표 일출 명소.",
+        highlight: "정상 분화구, 일출",
+        hours: "07:00~20:00 (계절별 변동)",
+        price: "성인 5천원",
+        tip: "정상까지 계단 30분 코스입니다. 물과 모자를 챙기세요.",
+      },
+      {
+        id: "seopjikoji",
+        name: "섭지코지",
+        category: "명소",
+        region: "seongsan",
+        address: "서귀포시 성산읍 고성리",
+        summary: "초원과 해안 절벽이 이어지는 산책 코스.",
+        highlight: "등대 전망, 봄 유채꽃",
+        hours: "24시간",
+        price: "무료 (주차 유료)",
+        tip: "바람이 매우 강합니다. 모자보다 후드가 편해요.",
+      },
+      {
+        id: "gwangchigi",
+        name: "광치기해변",
+        category: "명소",
+        region: "seongsan",
+        address: "서귀포시 성산읍 고성리 224-33",
+        summary: "썰물 때 초록 이끼 암반이 드러나는 성산 앞 해변.",
+        highlight: "이끼 암반, 성산일출봉 배경 사진",
+        hours: "24시간",
+        price: "무료",
+        tip: "썰물 시간에만 이끼 지대가 드러납니다. 물때를 확인하세요.",
+      },
+
+      // 서귀포·중문
+      {
+        id: "negeori",
+        name: "네거리식당",
+        category: "맛집",
+        region: "seogwipo",
+        address: "서귀포시 서문로29번길 20",
+        summary: "서귀포 올레시장 근처의 갈치조림·갈치국 노포.",
+        highlight: "갈치조림, 갈치국",
+        hours: "07:00~21:00",
+        price: "2만원대",
+        tip: "갈치국은 호불호가 갈립니다. 처음이면 조림이 무난해요.",
+      },
+      {
+        id: "chunsim",
+        name: "춘심이네",
+        category: "맛집",
+        region: "seogwipo",
+        address: "서귀포시 안덕면 창천중앙로24번길 16",
+        summary: "숯불에 통으로 구워 주는 은갈치구이 전문점.",
+        highlight: "통갈치구이, 갈치조림",
+        hours: "10:00~21:00",
+        price: "3만원대",
+        tip: "통갈치는 2인 이상 주문이 일반적입니다. 예약을 권합니다.",
+      },
+      {
+        id: "seoyeon",
+        name: "서연의집",
+        category: "카페",
+        region: "seogwipo",
+        address: "서귀포시 남원읍 위미해안로 86",
+        summary: "영화 촬영지를 그대로 살린 옛집 감성의 바다 앞 카페.",
+        highlight: "영화 세트 그대로의 실내, 위미 바다",
+        hours: "10:00~19:00",
+        price: "7천~1만원",
+        tip: "실내가 좁아 단체보다 두세 명 방문이 편합니다.",
+      },
+      {
+        id: "oneandonly",
+        name: "원앤온리",
+        category: "카페",
+        region: "seogwipo",
+        address: "서귀포시 안덕면 산방로 141",
+        summary: "산방산과 황우지 해안을 한 프레임에 담는 대형 카페.",
+        highlight: "산방산 조망, 야외 잔디",
+        hours: "09:00~20:00",
+        price: "8천~1만2천원",
+        tip: "야외 좌석이 넓어 아이 동반도 편합니다. 주차 공간이 넉넉해요.",
+      },
+      {
+        id: "cheonjiyeon",
+        name: "천지연폭포",
+        category: "명소",
+        region: "seogwipo",
+        address: "서귀포시 남성중로 2-15",
+        summary: "주차장에서 평지 산책 10분이면 닿는 22m 폭포.",
+        highlight: "야간 조명, 평탄한 산책로",
+        hours: "09:00~22:00",
+        price: "성인 2천원",
+        tip: "저녁 조명이 켜진 뒤가 붐비지 않고 시원합니다.",
+      },
+      {
+        id: "jusangjeolli",
+        name: "중문 대포해안 주상절리대",
+        category: "명소",
+        region: "seogwipo",
+        address: "서귀포시 이어도로 36-24",
+        summary: "육각 기둥 모양 현무암 절벽에 파도가 부딪히는 해안.",
+        highlight: "주상절리 절벽, 파도 전망",
+        hours: "09:00~18:00",
+        price: "성인 2천원",
+        tip: "파도가 높은 날 사진이 훨씬 잘 나옵니다. 관람로는 15분 코스.",
+      },
+      {
+        id: "soesokkak",
+        name: "쇠소깍",
+        category: "명소",
+        region: "seogwipo",
+        address: "서귀포시 하효동",
+        summary: "민물과 바닷물이 만나는 협곡. 검은 모래 해변과 이어집니다.",
+        highlight: "테우 체험, 협곡 산책",
+        hours: "24시간 (체험 09:00~17:30)",
+        price: "무료 (체험 별도)",
+        tip: "테우 체험은 기상 상황에 따라 운휴합니다. 당일 확인이 필요해요.",
+      },
+      {
+        id: "olle-market",
+        name: "서귀포매일올레시장",
+        category: "명소",
+        region: "seogwipo",
+        address: "서귀포시 중정로 62",
+        summary: "서귀포 숙소 근처에서 저녁거리를 해결하기 좋은 상설시장.",
+        highlight: "회국수, 감귤 주전부리, 야시장 먹거리",
+        hours: "07:00~21:00",
+        price: "먹거리 3천~1만원",
+        tip: "저녁 시간대가 가장 활기찹니다. 시장 주차장은 혼잡해요.",
+      },
+    ];
+
+
+    // ── 상태 ──────────────────────────────────────────────────────────
+    const STORAGE_KEY = "jeju-planner-saved";
+    const HIDDEN_KEY = "jeju-planner-hidden";
+    const VIEW_KEY = "jeju-planner-view";
+
+    const state = {
+      category: "all",
+      region: "all",
+      query: "",
+      view: loadView(),
+      hidden: loadIds(HIDDEN_KEY),
+      saved: loadIds(STORAGE_KEY),
+    };
+    // 삭제된 장소가 담긴 목록에 남아 있지 않도록 시작 시 맞춥니다.
+    state.saved = state.saved.filter(function (id) { return state.hidden.indexOf(id) === -1; });
+
+    // 저장된 id 배열을 읽고, 깨졌거나 데이터에 없는 id는 정리합니다.
+    function loadIds(key) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return [];
+        const valid = new Set(PLACES.map(function (p) { return p.id; }));
+        return parsed.filter(function (id) { return valid.has(id); });
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function loadView() {
+      try {
+        const v = localStorage.getItem(VIEW_KEY);
+        return v === "list" ? "list" : "grid";
+      } catch (e) {
+        return "grid";
+      }
+    }
+
+    function persist(key, value) {
+      try {
+        localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
+      } catch (e) {
+        // 시크릿 모드 등 저장이 막힌 환경에서는 화면 동작만 유지합니다.
+      }
+    }
+
+    function persistSaved() { persist(STORAGE_KEY, state.saved); }
+    function persistHidden() { persist(HIDDEN_KEY, state.hidden); }
+
+    function isSaved(id) {
+      return state.saved.indexOf(id) !== -1;
+    }
+
+    // 삭제는 목록에서 감추는 동작입니다. 원본 데이터는 그대로이고 복원할 수 있습니다.
+    function deletePlace(id) {
+      if (state.hidden.indexOf(id) === -1) state.hidden.push(id);
+      const s = state.saved.indexOf(id);
+      if (s !== -1) state.saved.splice(s, 1); // 삭제한 곳은 담긴 목록에서도 빠집니다.
+      persistHidden();
+      persistSaved();
+      render();
+    }
+
+    function restoreAll() {
+      state.hidden = [];
+      persistHidden();
+      render();
+    }
+
+    // 이름·주소·설명·추천·팁·카테고리·권역을 모두 대상으로 합니다.
+    function matchesQuery(place, q) {
+      if (!q) return true;
+      return [
+        place.name, place.address, place.summary,
+        place.highlight, place.tip, place.category, regionName(place.region),
+      ].join(" ").toLowerCase().indexOf(q) !== -1;
+    }
+
+    function toggleSaved(id) {
+      const index = state.saved.indexOf(id);
+      if (index === -1) state.saved.push(id);
+      else state.saved.splice(index, 1);
+      persistSaved();
+      render();
+    }
+
+    function regionName(id) {
+      const region = REGIONS.find(function (r) { return r.id === id; });
+      return region ? region.name : id;
+    }
+
+    function kakaoMapUrl(place) {
+      return "https://map.kakao.com/link/search/" + encodeURIComponent(place.name + " " + place.address);
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function metaRow(label, value) {
+      return "<div><dt>" + escapeHtml(label) + "</dt><dd>" + escapeHtml(value) + "</dd></div>";
+    }
+
+    // ── 필터 칩 ──────────────────────────────────────────────────────────
+    function buildChips(containerId, items, key) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = "";
+      [{ value: "all", label: "전체" }].concat(items).forEach(function (item) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "chip";
+        button.textContent = item.label;
+        button.dataset.value = item.value;
+        button.setAttribute("aria-pressed", String(state[key] === item.value));
+        button.addEventListener("click", function () {
+          state[key] = item.value;
+          render();
+        });
+        container.appendChild(button);
+      });
+    }
+
+    function syncChips(containerId, key) {
+      document.querySelectorAll("#" + containerId + " .chip").forEach(function (chip) {
+        chip.setAttribute("aria-pressed", String(chip.dataset.value === state[key]));
+      });
+    }
+
+    // ── 장소 카드 ────────────────────────────────────────────────────────
+    function placeCard(place) {
+      const article = document.createElement("article");
+      article.className = "place";
+      article.dataset.category = place.category;
+      const saved = isSaved(place.id);
+      article.innerHTML =
+        '<span class="place-tab" aria-hidden="true"></span>' +
+        '<div class="place-head">' +
+        '<span class="place-icon">' + icon(ICON_PATHS[place.category] || ICON_PATHS.pin) + "</span>" +
+        '<div class="place-headtext">' +
+        "<h3>" + escapeHtml(place.name) + "</h3>" +
+        '<div class="place-tags">' +
+        '<span class="tag tag-category">' + escapeHtml(place.category) + "</span>" +
+        '<span class="tag">' + escapeHtml(regionName(place.region)) + "</span>" +
+        "</div>" +
+        '<p class="place-addr">' + escapeHtml(place.address) + "</p>" +
+        "</div>" +
+        "</div>" +
+        '<p class="place-summary">' + escapeHtml(place.summary) + "</p>" +
+        '<dl class="place-meta">' +
+        metaRow("주소", place.address) +
+        metaRow(place.category === "명소" ? "볼거리" : "추천", place.highlight) +
+        metaRow("영업시간", place.hours) +
+        metaRow("가격대", place.price) +
+        metaRow("방문 팁", place.tip) +
+        "</dl>" +
+        '<div class="place-actions">' +
+        '<button class="btn-save" type="button" aria-pressed="' + saved + '">' +
+        icon(saved ? ICON_PATHS.check : ICON_PATHS.plus) +
+        '<span class="btn-label">' + (saved ? "담김" : "담기") + "</span>" +
+        "</button>" +
+        '<a class="btn-map" href="' + kakaoMapUrl(place) + '" target="_blank" rel="noopener noreferrer">' +
+        icon(ICON_PATHS.pin) + '<span class="btn-label">카카오맵</span></a>' +
+        '<button class="btn-delete" type="button" aria-label="' + escapeHtml(place.name) + ' 목록에서 삭제">' +
+        icon(ICON_PATHS.trash) + "</button>" +
+        "</div>";
+
+      article.querySelector(".btn-save").addEventListener("click", function () {
+        toggleSaved(place.id);
+      });
+      article.querySelector(".btn-delete").addEventListener("click", function () {
+        deletePlace(place.id);
+      });
+      return article;
+    }
+
+    function renderPlaces() {
+      const grid = document.getElementById("place-grid");
+      const q = state.query.trim().toLowerCase();
+      const filtered = PLACES.filter(function (place) {
+        return (
+          state.hidden.indexOf(place.id) === -1 &&
+          (state.category === "all" || place.category === state.category) &&
+          (state.region === "all" || place.region === state.region) &&
+          matchesQuery(place, q)
+        );
+      });
+
+      grid.dataset.view = state.view;
+      grid.innerHTML = "";
+      if (filtered.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "empty";
+        // 상황별로 다음 행동을 안내합니다.
+        empty.textContent = q
+          ? '"' + state.query.trim() + '" 검색 결과가 없습니다. 다른 단어로 찾아보세요.'
+          : state.hidden.length > 0
+            ? "조건에 맞는 장소가 모두 삭제됐습니다. 되돌리기를 누르면 복원됩니다."
+            : "조건에 맞는 장소가 없습니다. 카테고리나 권역을 바꿔 보세요.";
+        grid.appendChild(empty);
+      } else {
+        filtered.forEach(function (place) {
+          grid.appendChild(placeCard(place));
+        });
+      }
+
+      const parts = [
+        state.category === "all" ? "전체" : state.category,
+        state.region === "all" ? "제주 전역" : regionName(state.region),
+      ];
+      if (q) parts.push('"' + state.query.trim() + '" 검색');
+      document.getElementById("result-count").innerHTML =
+        escapeHtml(parts.join(" · ")) + " <b>" + filtered.length + "곳</b>";
+
+      // 삭제 복원 바
+      const bar = document.getElementById("restore-bar");
+      document.getElementById("hidden-count").textContent = String(state.hidden.length);
+      bar.hidden = state.hidden.length === 0;
+    }
+
+    // ── 내 여행 목록 ─────────────────────────────────────────────────────
+    function renderSaved() {
+      const container = document.getElementById("saved-container");
+      container.innerHTML = "";
+      document.getElementById("saved-count").textContent = String(state.saved.length);
+
+      if (state.saved.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "empty";
+        empty.textContent = "아직 담은 장소가 없습니다. 위 목록에서 '담기'를 눌러 보세요.";
+        container.appendChild(empty);
+        return;
+      }
+
+      REGIONS.forEach(function (region) {
+        const places = state.saved
+          .map(function (id) {
+            return PLACES.find(function (p) { return p.id === id; });
+          })
+          .filter(function (place) {
+            return place && place.region === region.id;
+          });
+        if (places.length === 0) return;
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "saved-region";
+
+        const heading = document.createElement("h3");
+        heading.innerHTML = escapeHtml(region.name) + " <span>" + places.length + "곳</span>";
+        wrapper.appendChild(heading);
+
+        const list = document.createElement("ul");
+        list.className = "saved-list";
+        places.forEach(function (place) {
+          const item = document.createElement("li");
+          item.className = "saved-item";
+          item.innerHTML =
+            '<div class="saved-item-main">' +
+            '<div class="saved-item-name">' + escapeHtml(place.name) + "</div>" +
+            '<div class="saved-item-sub">' + escapeHtml(place.category + " · " + place.address) + "</div>" +
+            "</div>" +
+            '<div class="saved-item-actions">' +
+            '<a class="icon-btn" href="' + kakaoMapUrl(place) + '" target="_blank" rel="noopener noreferrer" aria-label="' + escapeHtml(place.name) + ' 카카오맵으로 보기">' +
+            icon(ICON_PATHS.pin) + "</a>" +
+            '<button class="icon-btn" type="button" aria-label="' + escapeHtml(place.name) + ' 목록에서 빼기">' +
+            icon(ICON_PATHS.close) + "</button>" +
+            "</div>";
+          item.querySelector("button").addEventListener("click", function () {
+            toggleSaved(place.id);
+          });
+          list.appendChild(item);
+        });
+
+        wrapper.appendChild(list);
+        container.appendChild(wrapper);
+      });
+    }
+
+    function render() {
+      syncChips("category-chips", "category");
+      syncChips("region-chips", "region");
+      document.querySelectorAll(".view-toggle button").forEach(function (b) {
+        b.setAttribute("aria-pressed", String(b.dataset.view === state.view));
+      });
+      document.getElementById("search-clear").hidden = state.query === "";
+      renderPlaces();
+      renderSaved();
+    }
+
+    // ── 초기화 ───────────────────────────────────────────────────────────
+    buildChips(
+      "category-chips",
+      CATEGORIES.map(function (c) { return { value: c, label: c }; }),
+      "category"
+    );
+    buildChips(
+      "region-chips",
+      REGIONS.map(function (r) { return { value: r.id, label: r.name }; }),
+      "region"
+    );
+
+    // 검색
+    const searchInput = document.getElementById("search");
+    searchInput.addEventListener("input", function () {
+      state.query = searchInput.value;
+      render();
+    });
+    document.getElementById("search-clear").addEventListener("click", function () {
+      searchInput.value = "";
+      state.query = "";
+      searchInput.focus();
+      render();
+    });
+
+    // 보기 전환 (선택은 다음 방문에도 유지)
+    document.querySelectorAll(".view-toggle button").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        state.view = btn.dataset.view;
+        persist(VIEW_KEY, state.view);
+        render();
+      });
+    });
+
+    // 삭제 복원
+    document.getElementById("restore-all").addEventListener("click", restoreAll);
+
+    document.getElementById("clear-saved").addEventListener("click", function () {
+      if (state.saved.length === 0) return;
+      if (!confirm("담은 장소를 모두 비울까요?")) return;
+      state.saved = [];
+      persistSaved();
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
