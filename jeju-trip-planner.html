@@ -131,13 +131,20 @@
       height: 64px;
     }
     .logo {
+      font-family: inherit;
       font-weight: 900;
       font-size: 1.3rem;
       letter-spacing: -0.04em;
       color: var(--ink);
       text-decoration: none;
       white-space: nowrap;
+      border: none;
+      background: none;
+      padding: 0;
+      cursor: pointer;
+      transition: transform var(--motion) ease;
     }
+    .logo:active { transform: translate(2px, 2px); }
     .logo span {
       display: inline-block;
       background: var(--ink);
@@ -1087,7 +1094,63 @@
     .icon-btn:hover { background: var(--ink); color: var(--paper); }
     .icon-btn:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--shadow); }
 
-    /* ── 푸터 ─────────────────────────────────────────────────────────── */
+    /* ── 기기 연동 ───────────────────────────────────────────────────── */
+    .sync-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 2px solid var(--ink);
+    }
+    .sync-row[hidden] { display: none; }
+    .sync-state {
+      color: var(--ink-soft);
+      font-size: 0.82rem;
+      font-weight: 700;
+      min-width: 0;
+    }
+    .sync-code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      color: var(--ink);
+      word-break: break-all;
+    }
+
+    .sync-box {
+      margin-bottom: 16px;
+      padding: 14px;
+      background: var(--surface-alt);
+      border: var(--bw) solid var(--ink);
+      border-radius: var(--radius-sm);
+    }
+    .sync-box p { font-size: 0.86rem; font-weight: 500; line-height: 1.55; }
+    .sync-box p + p { margin-top: 8px; }
+    .sync-big-code {
+      display: block;
+      margin: 12px 0;
+      padding: 13px;
+      background: var(--fill-strong);
+      color: var(--on-strong);
+      border-radius: var(--radius-sm);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 1.15rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-align: center;
+      word-break: break-all;
+    }
+    .sync-warn {
+      margin-top: 10px;
+      font-size: 0.79rem;
+      font-weight: 700;
+      color: var(--ink-soft);
+    }
+    .sync-actions { display: flex; gap: 9px; flex-wrap: wrap; margin-top: 12px; }
+
+    /* ── 푸터 ───────────────────────────────────────────────────── */
     footer {
       border-top: var(--bw) solid var(--ink);
       background: var(--ink);
@@ -1142,7 +1205,7 @@
   <header>
     <div class="container">
       <nav>
-        <span class="logo">제주<span>플래너</span></span>
+        <button class="logo" type="button" id="logo-home" aria-label="처음 화면으로">제주<span>플래너</span></button>
         <button class="theme-toggle" type="button" aria-label="테마 전환">🌙</button>
       </nav>
     </div>
@@ -1240,6 +1303,15 @@
           </button>
         </div>
         <div id="saved-container"></div>
+
+        <!-- 기기 연동: 서버 저장소가 연결된 때만 노출됩니다. -->
+        <div class="sync-row" id="sync-row" hidden>
+          <span class="sync-state" id="sync-state"></span>
+          <button class="btn-clear" type="button" id="open-sync">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 0 1-13.6 5.7M4 12a8 8 0 0 1 13.6-5.7M4 18.5V13h5.5M20 5.5V11h-5.5"/></svg>
+            기기 연동
+          </button>
+        </div>
       </div>
     </section>
   </main>
@@ -1249,6 +1321,61 @@
       <p>장소 정보는 참고용입니다. 영업시간·가격·휴무일은 방문 전 확인해 주세요.</p>
     </div>
   </footer>
+
+  <!-- 기기 연동 시트 -->
+  <div class="sheet-backdrop" id="sync-backdrop" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sync-title">
+      <div class="sheet-head">
+        <h2 id="sync-title">기기 연동</h2>
+        <button class="icon-btn" type="button" id="close-sync" aria-label="닫기">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+
+      <div class="sheet-body">
+        <p class="form-error" id="sync-error" hidden></p>
+
+        <!-- 연동 전 -->
+        <div class="sync-box" id="sync-off">
+          <p><strong>추가·담기·삭제한 내용을 여러 기기에서 같이 보려면</strong> 연동 코드를 만들어 다른 기기에 입력하세요.</p>
+          <p>지금 이 기기에 있는 내용이 그대로 올라갑니다.</p>
+          <div class="sync-actions">
+            <button class="btn-primary" type="button" id="sync-create">연동 시작하기</button>
+          </div>
+        </div>
+
+        <div class="sync-box" id="sync-join">
+          <p><strong>이미 다른 기기에서 연동을 시작했다면</strong> 그 코드를 입력하세요.</p>
+          <div class="field" style="margin-top:10px">
+            <label for="sync-input">연동 코드</label>
+            <input id="sync-input" type="text" inputmode="latin" autocomplete="off"
+                   maxlength="12" placeholder="예: a1b2c3d4e5f6" />
+          </div>
+          <p class="sync-warn">연결하면 <strong>서버에 있는 내용으로 이 기기가 덮어씁니다.</strong></p>
+          <div class="sync-actions">
+            <button class="btn-ghost" type="button" id="sync-join-btn">이 코드로 연결</button>
+          </div>
+        </div>
+
+        <!-- 연동 중 -->
+        <div class="sync-box" id="sync-on" hidden>
+          <p><strong>연동 중입니다.</strong> 다른 기기에서 아래 코드를 입력하면 같은 목록을 볼 수 있습니다.</p>
+          <code class="sync-big-code" id="sync-code-view"></code>
+          <p class="sync-warn">⚠️ 이 코드를 아는 사람은 누구나 목록을 보고 고칠 수 있습니다. 비밀번호처럼 다루세요.</p>
+          <div class="sync-actions">
+            <button class="btn-ghost" type="button" id="sync-copy">코드 복사</button>
+            <button class="btn-ghost" type="button" id="sync-pull">지금 받아오기</button>
+            <button class="btn-ghost" type="button" id="sync-unlink">연동 끊기</button>
+          </div>
+          <p class="sync-warn" id="sync-detail"></p>
+        </div>
+      </div>
+
+      <div class="sheet-foot">
+        <button class="btn-ghost" type="button" id="sync-done">닫기</button>
+      </div>
+    </div>
+  </div>
 
   <!-- 장소 추가 시트 -->
   <div class="sheet-backdrop" id="add-backdrop" hidden>
@@ -1892,12 +2019,14 @@
       persistHidden();
       persistSaved();
       render();
+      scheduleSync();
     }
 
     function restoreAll() {
       state.hidden = [];
       persistHidden();
       render();
+      scheduleSync();
     }
 
     // 이름·주소·설명·추천·팁·카테고리·권역을 모두 대상으로 합니다.
@@ -1915,6 +2044,7 @@
       else state.saved.splice(index, 1);
       persistSaved();
       render();
+      scheduleSync();
     }
 
     function regionName(id) {
@@ -2413,6 +2543,7 @@
       closeSheet();
       render();
       renderDiscover(); // 방금 추가한 곳을 '있음'으로 바꿉니다.
+      scheduleSync();
     }
 
     document.getElementById("open-add").addEventListener("click", openSheet);
@@ -2428,6 +2559,215 @@
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && !backdrop.hidden) closeSheet();
     });
+
+    // ── 로고 → 처음 화면 ───────────────────────────────────────────────
+    // 단일 페이지라 검색·필터를 풀고 맨 위로 올립니다.
+    // 보기 방식·담은 목록·삭제 상태는 사용자 선택이므로 건드리지 않습니다.
+    document.getElementById("logo-home").addEventListener("click", function () {
+      if (!backdrop.hidden) closeSheet();
+      if (!syncBackdrop.hidden) closeSyncSheet();
+      state.query = "";
+      state.category = "all";
+      state.region = "all";
+      document.getElementById("search").value = "";
+      document.querySelectorAll(".chips").forEach(function (c) { c.scrollLeft = 0; });
+      render();
+      scheduleDiscover();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    // ── 기기 연동 ────────────────────────────────────────────────────
+    // 추가·담기·삭제 세 가지를 서버(KV)에 올려 여러 기기가 같은 목록을 봅니다.
+    // 서버 바인딩이 없으면(503) 연동 UI 자체를 숨기고 기존처럼 로컬로만 동작합니다.
+    const SYNC_KEY = "jeju-planner-sync-code";
+    const SYNC_API = "/api/sync";
+    const syncRow = document.getElementById("sync-row");
+    const syncState = document.getElementById("sync-state");
+    const syncBackdrop = document.getElementById("sync-backdrop");
+    const syncError = document.getElementById("sync-error");
+    const syncDetail = document.getElementById("sync-detail");
+
+    let syncCode = null;
+    let syncAvailable = false;   // 서버 쪽 준비 여부
+    let syncTimer = null;
+    let syncBusy = false;
+
+    try { syncCode = localStorage.getItem(SYNC_KEY) || null; } catch (e) { syncCode = null; }
+    if (syncCode && !/^[a-z0-9]{12}$/.test(syncCode)) syncCode = null;
+
+    function makeCode() {
+      const chars = "abcdefghijkmnpqrstuvwxyz23456789"; // 헷갈리는 l,o,0,1 제외
+      let out = "";
+      const buf = new Uint8Array(12);
+      (window.crypto || window.msCrypto).getRandomValues(buf);
+      for (let i = 0; i < 12; i++) out += chars[buf[i] % chars.length];
+      return out;
+    }
+
+    function snapshot() {
+      return { custom: state.custom, saved: state.saved, hidden: state.hidden };
+    }
+
+    function setSyncError(msg) {
+      syncError.textContent = msg || "";
+      syncError.hidden = !msg;
+    }
+
+    function renderSyncUI() {
+      syncRow.hidden = !syncAvailable;
+      if (!syncAvailable) return;
+      if (syncCode) {
+        syncState.innerHTML = '연동 중 · <span class="sync-code">' + escapeHtml(syncCode) + "</span>";
+        document.getElementById("sync-on").hidden = false;
+        document.getElementById("sync-off").hidden = true;
+        document.getElementById("sync-join").hidden = true;
+        document.getElementById("sync-code-view").textContent = syncCode;
+      } else {
+        syncState.textContent = "이 기기에만 저장됩니다";
+        document.getElementById("sync-on").hidden = true;
+        document.getElementById("sync-off").hidden = false;
+        document.getElementById("sync-join").hidden = false;
+      }
+    }
+
+    // 서버가 준비됐는지 한 번 확인합니다 (바인딩 없으면 503).
+    function probeSync() {
+      fetch(SYNC_API + "?code=probe0000000", { method: "GET" })
+        .then(function (res) {
+          // 400(코드 형식 오류)이면 엔드포인트는 살아 있는 것입니다.
+          syncAvailable = res.status !== 503 && res.status !== 404 ? true : res.status === 404;
+          if (res.status === 503) syncAvailable = false;
+          renderSyncUI();
+          if (syncAvailable && syncCode) pullSync(true);
+        })
+        .catch(function () { syncAvailable = false; renderSyncUI(); });
+    }
+
+    function pushSync() {
+      if (!syncAvailable || !syncCode || syncBusy) return;
+      syncBusy = true;
+      fetch(SYNC_API + "?code=" + encodeURIComponent(syncCode), {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ data: snapshot() }),
+      })
+        .then(function (res) {
+          syncDetail.textContent = res.ok
+            ? "마지막 저장 " + new Date().toLocaleTimeString()
+            : "저장 실패 (" + res.status + ")";
+        })
+        .catch(function () { syncDetail.textContent = "저장 실패 — 네트워크를 확인하세요."; })
+        .then(function () { syncBusy = false; });
+    }
+
+    // 타이핑마다 보내지 않도록 묶어서 올립니다 (KV 무료 쓰기 1,000회/일).
+    function scheduleSync() {
+      if (!syncAvailable || !syncCode) return;
+      clearTimeout(syncTimer);
+      syncTimer = setTimeout(pushSync, 2500);
+    }
+
+    function applyRemote(data) {
+      state.custom = (data.custom || []).map(function (p) {
+        return {
+          id: p.id, name: p.name, category: p.category, region: p.region,
+          address: p.address, summary: p.summary || "", highlight: p.highlight || "",
+          hours: p.hours || "", price: p.price || "", tip: p.tip || "", custom: true,
+        };
+      });
+      const valid = new Set(allPlaces().map(function (p) { return p.id; }));
+      state.hidden = (data.hidden || []).filter(function (id) { return valid.has(id); });
+      state.saved = (data.saved || []).filter(function (id) {
+        return valid.has(id) && state.hidden.indexOf(id) === -1;
+      });
+      persistCustom(); persistSaved(); persistHidden();
+      render();
+    }
+
+    // quiet=true면 사용자에게 오류를 띄우지 않습니다 (자동 불러오기).
+    function pullSync(quiet) {
+      if (!syncAvailable || !syncCode) return Promise.resolve(false);
+      return fetch(SYNC_API + "?code=" + encodeURIComponent(syncCode), { method: "GET" })
+        .then(function (res) {
+          if (res.status === 404) {
+            // 서버에 아직 없는 코드 — 이 기기 내용을 올립니다.
+            pushSync();
+            return false;
+          }
+          if (!res.ok) throw new Error(String(res.status));
+          return res.json().then(function (body) {
+            applyRemote(body.data || {});
+            syncDetail.textContent = "마지막 받음 " + new Date(body.updatedAt).toLocaleString();
+            return true;
+          });
+        })
+        .catch(function () {
+          if (!quiet) setSyncError("불러오지 못했습니다. 네트워크를 확인하세요.");
+          return false;
+        });
+    }
+
+    function openSyncSheet() {
+      setSyncError("");
+      document.getElementById("sync-input").value = "";
+      renderSyncUI();
+      syncBackdrop.hidden = false;
+      document.body.style.overflow = "hidden";
+    }
+    function closeSyncSheet() {
+      syncBackdrop.hidden = true;
+      document.body.style.overflow = "";
+      setSyncError("");
+    }
+
+    document.getElementById("open-sync").addEventListener("click", openSyncSheet);
+    document.getElementById("close-sync").addEventListener("click", closeSyncSheet);
+    document.getElementById("sync-done").addEventListener("click", closeSyncSheet);
+    syncBackdrop.addEventListener("click", function (e) { if (e.target === syncBackdrop) closeSyncSheet(); });
+
+    document.getElementById("sync-create").addEventListener("click", function () {
+      syncCode = makeCode();
+      persist(SYNC_KEY, syncCode);
+      renderSyncUI();
+      pushSync();
+    });
+
+    document.getElementById("sync-join-btn").addEventListener("click", function () {
+      const v = document.getElementById("sync-input").value.trim().toLowerCase();
+      if (!/^[a-z0-9]{12}$/.test(v)) {
+        setSyncError("코드는 영문·숫자 12자입니다.");
+        return;
+      }
+      setSyncError("");
+      syncCode = v;
+      persist(SYNC_KEY, syncCode);
+      renderSyncUI();
+      pullSync(false).then(function (ok) {
+        if (!ok) setSyncError("그 코드로 저장된 내용이 아직 없습니다. 이 기기 내용을 올렸습니다.");
+      });
+    });
+
+    document.getElementById("sync-pull").addEventListener("click", function () {
+      setSyncError("");
+      pullSync(false);
+    });
+
+    document.getElementById("sync-copy").addEventListener("click", function () {
+      if (!syncCode) return;
+      if (navigator.clipboard) navigator.clipboard.writeText(syncCode);
+      syncDetail.textContent = "코드를 복사했습니다.";
+    });
+
+    document.getElementById("sync-unlink").addEventListener("click", function () {
+      // 서버 데이터는 그대로 두고 이 기기만 끈습니다.
+      if (!confirm("이 기기의 연동을 끊을까요? 서버의 내용은 그대로 남고, 같은 코드로 다시 연결할 수 있습니다.")) return;
+      syncCode = null;
+      try { localStorage.removeItem(SYNC_KEY); } catch (e) {}
+      syncDetail.textContent = "";
+      renderSyncUI();
+    });
+
+    probeSync();
 
     // 검색
     const searchInput = document.getElementById("search");
@@ -2462,6 +2802,7 @@
       state.saved = [];
       persistSaved();
       render();
+      scheduleSync();
     });
 
     render();
