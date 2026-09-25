@@ -900,6 +900,84 @@
       }
     }
 
+    /* ── 카카오맵에서 더 찾기 ──────────────────────────────────────────── */
+    .discover {
+      margin-top: 34px;
+      padding-top: 26px;
+      border-top: var(--bw) dashed var(--ink);
+    }
+    .discover[hidden] { display: none; }
+    .discover-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.05rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      margin-bottom: 6px;
+    }
+    .discover-status {
+      color: var(--ink-soft);
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 14px;
+    }
+    .discover-list { list-style: none; display: grid; gap: 10px; }
+    .discover-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      background: var(--surface);
+      border: var(--bw) solid var(--ink);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--sh-sm);
+    }
+    .discover-main { min-width: 0; }
+    .discover-name { font-weight: 900; font-size: 0.97rem; }
+    .discover-meta {
+      color: var(--ink-soft);
+      font-size: 0.8rem;
+      font-weight: 500;
+      margin-top: 2px;
+    }
+    .discover-actions { display: flex; gap: 7px; flex-shrink: 0; }
+    .btn-pick {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 42px;
+      padding: 8px 14px;
+      border: var(--bw) solid var(--ink);
+      border-radius: var(--radius-sm);
+      background: var(--fill-strong);
+      color: var(--on-strong);
+      box-shadow: var(--sh-sm);
+      font: inherit;
+      font-size: 0.86rem;
+      font-weight: 900;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: transform var(--motion) ease, box-shadow var(--motion) ease,
+                  background var(--motion) ease, color var(--motion) ease;
+    }
+    .btn-pick:hover { background: var(--surface); color: var(--ink); }
+    .btn-pick:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--shadow); }
+    .btn-pick[disabled] {
+      background: var(--surface-alt);
+      color: var(--ink-soft);
+      cursor: default;
+      box-shadow: none;
+      transform: none;
+    }
+
+    @media (max-width: 420px) {
+      .discover-item { gap: 9px; padding: 11px 12px; }
+      .btn-pick { padding: 8px 11px; font-size: 0.82rem; }
+      .btn-pick .btn-label { display: none; }
+    }
+
     /* ── 빈 상태 ──────────────────────────────────────────────────────── */
     .empty {
       grid-column: 1 / -1;
@@ -1132,6 +1210,16 @@
           </button>
         </div>
         <div class="place-grid" id="place-grid"></div>
+
+        <!-- 메인 검색어로 카카오맵을 바로 찾아 보여 줍니다. -->
+        <div class="discover" id="discover" hidden>
+          <h2 class="discover-title">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg>
+            카카오맵에서 더 찾기
+          </h2>
+          <p class="discover-status" id="discover-status"></p>
+          <ul class="discover-list" id="discover-list"></ul>
+        </div>
       </div>
     </section>
 
@@ -2124,48 +2212,131 @@
       kakaoStatus.hidden = !msg;
     }
 
+    // 카카오 장소 검색 공용 루틴. 메인 검색창과 추가 시트가 같이 씁니다.
+    // cb(error, results) — error는 사람이 읽을 수 있는 문장입니다.
+    function searchKakao(query, cb) {
+      const q = String(query || "").trim();
+      if (!q) return cb("검색어를 입력하세요.", []);
+      loadKakao().then(function (ok) {
+        if (!ok) {
+          return cb("카카오맵 검색을 불러오지 못했습니다. 키와 도메인 등록을 확인하세요.", []);
+        }
+        const ps = new kakao.maps.services.Places();
+        // 제주 밖 결과가 섞이지 않도록 검색어에 지역을 붙입니다.
+        ps.keywordSearch(/제주/.test(q) ? q : "제주 " + q, function (data, status) {
+          if (status !== kakao.maps.services.Status.OK || !data || data.length === 0) {
+            return cb("결과가 없습니다.", []);
+          }
+          const jeju = data.filter(function (d) {
+            return /제주/.test(d.address_name || "") || /제주/.test(d.road_address_name || "");
+          });
+          if (jeju.length === 0) return cb("제주 안에서 찾은 결과가 없습니다.", []);
+          cb(null, jeju);
+        }, { size: 15 });
+      });
+    }
+
+    function kakaoLabel(d) {
+      return (d.road_address_name || d.address_name || "") +
+        (d.category_name ? " · " + d.category_name.split(">").pop().trim() : "");
+    }
+
     function runKakaoSearch() {
       const q = document.getElementById("kakao-query").value.trim();
       kakaoResults.innerHTML = "";
       if (!q) { setKakaoStatus("검색어를 입력하세요."); return; }
       setKakaoStatus("카카오맵에서 찾는 중…");
 
-      loadKakao().then(function (ok) {
-        if (!ok) {
-          setKakaoStatus("카카오맵 검색을 불러오지 못했습니다. 키가 올바른지, 배포 도메인이 카카오 개발자 콘솔에 등록됐는지 확인하세요. 아래에서 직접 입력할 수 있습니다.");
+      searchKakao(q, function (err, results) {
+        kakaoResults.innerHTML = "";
+        if (err) {
+          setKakaoStatus(err + " 아래에서 직접 입력할 수 있습니다.");
           return;
         }
-        const ps = new kakao.maps.services.Places();
-        // 제주 밖 결과가 섞이지 않도록 검색어에 지역을 붙입니다.
-        ps.keywordSearch(/제주/.test(q) ? q : "제주 " + q, function (data, status) {
-          if (status !== kakao.maps.services.Status.OK || !data || data.length === 0) {
-            setKakaoStatus("결과가 없습니다. 다른 이름으로 찾거나 아래에서 직접 입력하세요.");
-            return;
-          }
-          const jeju = data.filter(function (d) {
-            return /제주/.test(d.address_name || "") || /제주/.test(d.road_address_name || "");
-          });
-          if (jeju.length === 0) {
-            setKakaoStatus("제주 안에서 찾은 결과가 없습니다. 아래에서 직접 입력하세요.");
-            return;
-          }
-          setKakaoStatus(jeju.length + "곳을 찾았습니다. 하나를 고르면 아래 항목이 채워집니다.");
-          jeju.slice(0, 10).forEach(function (d) {
-            const li = document.createElement("li");
-            const btn = document.createElement("button");
-            btn.type = "button";
-            btn.innerHTML =
-              '<span class="kr-name">' + escapeHtml(d.place_name) + "</span>" +
-              '<span class="kr-meta">' +
-              escapeHtml((d.road_address_name || d.address_name || "") +
-                (d.category_name ? " · " + d.category_name.split(">").pop().trim() : "")) +
-              "</span>";
-            btn.addEventListener("click", function () { fillFromKakao(d); });
-            li.appendChild(btn);
-            kakaoResults.appendChild(li);
-          });
-        }, { size: 15 });
+        setKakaoStatus(results.length + "곳을 찾았습니다. 하나를 고르면 아래 항목이 채워집니다.");
+        results.slice(0, 10).forEach(function (d) {
+          const li = document.createElement("li");
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.innerHTML =
+            '<span class="kr-name">' + escapeHtml(d.place_name) + "</span>" +
+            '<span class="kr-meta">' + escapeHtml(kakaoLabel(d)) + "</span>";
+          btn.addEventListener("click", function () { fillFromKakao(d); });
+          li.appendChild(btn);
+          kakaoResults.appendChild(li);
+        });
       });
+    }
+
+    // ── 메인 검색창 → 카카오맵 결과를 바로 표시 ────────────────────────────
+    const discoverBox = document.getElementById("discover");
+    const discoverStatus = document.getElementById("discover-status");
+    const discoverList = document.getElementById("discover-list");
+    let discoverTimer = null;
+    let discoverSeq = 0; // 늦게 도착한 응답이 최신 결과를 덮어쓰지 않도록
+
+    // 이미 목록에 있는 곳인지 (삭제한 곳 포함)
+    function findExisting(d) {
+      const addr = d.road_address_name || d.address_name || "";
+      return allPlaces().find(function (p) {
+        return p.name === d.place_name && p.address === addr;
+      });
+    }
+
+    function renderDiscover() {
+      const q = state.query.trim();
+      // 키가 없거나 검색어가 짧으면 아예 띄우지 않습니다.
+      if (!KAKAO_JS_KEY || q.length < 2) {
+        discoverBox.hidden = true;
+        discoverList.innerHTML = "";
+        return;
+      }
+      discoverBox.hidden = false;
+      discoverStatus.textContent = "“" + q + "” 카카오맵에서 찾는 중…";
+
+      const seq = ++discoverSeq;
+      searchKakao(q, function (err, results) {
+        if (seq !== discoverSeq) return; // 더 최신 검색이 있음
+        discoverList.innerHTML = "";
+        if (err) { discoverStatus.textContent = err; return; }
+
+        discoverStatus.textContent = "카카오맵 결과 " + results.length + "곳. 추가하면 영업시간·가격대를 직접 적을 수 있습니다.";
+        results.slice(0, 8).forEach(function (d) {
+          const exists = findExisting(d);
+          const li = document.createElement("li");
+          li.className = "discover-item";
+          li.innerHTML =
+            '<div class="discover-main">' +
+            '<div class="discover-name">' + escapeHtml(d.place_name) + "</div>" +
+            '<div class="discover-meta">' + escapeHtml(kakaoLabel(d)) + "</div>" +
+            "</div>" +
+            '<div class="discover-actions">' +
+            '<a class="icon-btn" href="' + (d.place_url || kakaoMapUrl({ name: d.place_name, address: d.road_address_name || d.address_name || "" })) +
+            '" target="_blank" rel="noopener noreferrer" aria-label="' + escapeHtml(d.place_name) + ' 카카오맵으로 보기">' +
+            icon(ICON_PATHS.pin) + "</a>" +
+            '<button class="btn-pick" type="button"' + (exists ? " disabled" : "") + ">" +
+            icon(exists ? ICON_PATHS.check : ICON_PATHS.plus) +
+            '<span class="btn-label">' + (exists ? "있음" : "추가") + "</span></button>" +
+            "</div>";
+          if (!exists) {
+            li.querySelector(".btn-pick").addEventListener("click", function () {
+              openSheet();
+              fillFromKakao(d);
+            });
+          }
+          discoverList.appendChild(li);
+        });
+      });
+    }
+
+    // 타이핑 중 매번 부르지 않도록 짧게 묶어 보냅니다.
+    function scheduleDiscover() {
+      clearTimeout(discoverTimer);
+      const q = state.query.trim();
+      if (!KAKAO_JS_KEY || q.length < 2) { renderDiscover(); return; }
+      discoverBox.hidden = false;
+      discoverStatus.textContent = "“" + q + "” 카카오맵에서 찾는 중…";
+      discoverTimer = setTimeout(renderDiscover, 450);
     }
 
     // 카카오가 주는 것만 채우고, 나머지는 사용자 입력입니다.
@@ -2240,6 +2411,7 @@
       persistCustom();
       closeSheet();
       render();
+      renderDiscover(); // 방금 추가한 곳을 '있음'으로 바꿉니다.
     }
 
     document.getElementById("open-add").addEventListener("click", openSheet);
@@ -2261,12 +2433,14 @@
     searchInput.addEventListener("input", function () {
       state.query = searchInput.value;
       render();
+      scheduleDiscover();
     });
     document.getElementById("search-clear").addEventListener("click", function () {
       searchInput.value = "";
       state.query = "";
       searchInput.focus();
       render();
+      scheduleDiscover();
     });
 
     // 보기 전환 (선택은 다음 방문에도 유지)
